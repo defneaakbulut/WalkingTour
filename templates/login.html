@@ -5,7 +5,10 @@
 {% block content %}
   <section class="auth-page">
     <div class="auth-image">
-      <img src="{{ url_for('static', filename='Tour2_3.jpg') }}" alt="Turkish coffee in İzmir">
+      <video autoplay muted loop playsinline preload="metadata" aria-label="İzmir food tour scenes">
+        <source src="{{ url_for('static', filename='BoyozDöner.mp4') }}" type="video/mp4">
+        Your browser does not support HTML video.
+      </video>
     </div>
     <div class="auth-panel">
       <p class="eyebrow">Welcome back</p>
