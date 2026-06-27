@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}{{ tour.title }} — Turkish Delight{% endblock %}
+{% block content %}
+<section class="detail-hero"><img src="{{ url_for('static', filename=tour.images[0]) }}" alt="{{ tour.title }}"><div class="detail-shade"></div><div class="detail-title"><a href="{{ url_for('tours') }}">← All tours</a><p class="eyebrow light">{{ tour.subtitle }}</p><h1>{{ tour.title }}</h1><p>{{ tour.description }}</p></div></section>
+<section class="detail-bar"><span><small>Duration</small>{{ tour.duration // 60 }} hr {{ tour.duration % 60 if tour.duration % 60 else '' }}{% if tour.duration % 60 %} min{% endif %}</span><span><small>Language</small>{{ tour.language }}</span><span><small>Group</small>Up to {{ tour.capacity }}</span><span><small>Meeting point</small>{{ tour.meeting_point }}</span></section>
+<section class="section detail-layout">
+  <div class="detail-main"><p class="eyebrow">The story</p><h2>Walk into the<br><em>past.</em></h2><p class="lead">{{ tour.story }}</p><div class="highlight-list">{% for point in tour.story_points %}<p><span>0{{ loop.index }}</span>{{ point }}</p>{% endfor %}</div></div>
+  <aside class="booking-card"><div class="guide"><img src="{{ url_for('static', filename=tour.guide_image) }}" alt="{{ tour.guide_name }}, your tour guide"><div><small>Your local guide</small><strong>{{ tour.guide_name }}</strong></div></div><h3>Reserve your place</h3><p>Free to book. Tip your guide what the walk was worth afterward.</p>
+    {% if current_user.is_authenticated and current_user.role == 'participant' %}
+    <form action="{{ url_for('book_tour', tour_id=tour.id) }}" method="post" data-booking-form><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Choose a date<select name="tour_date" required><option value="">Select an occurrence</option>{% for item in occurrences %}<option value="{{ item.date }}" {% if item.booked >= tour.capacity %}disabled{% endif %}>{{ item.label }} at {{ item.time }} — {{ tour.capacity-item.booked }} places</option>{% endfor %}</select></label><div data-guests></div><button class="add-guest" type="button" data-add-guest>+ Add another person</button><button class="button button-dark button-full" type="submit">Book this walk</button></form>
+    {% elif current_user.is_authenticated %}<p class="role-note">Guide accounts cannot make participant reservations.</p>
+    {% else %}<a class="button button-dark button-full" href="{{ url_for('login', next=request.path) }}">Log in to book</a><p class="booking-new">New here? <a href="{{ url_for('register') }}">Create an account</a></p>{% endif %}
+  </aside>
+</section>
+<section class="taste-section"><div><p class="eyebrow light">Along the way</p><h2>What you’ll<br><em>taste.</em></h2><div class="taste-list">{% for food in tour.foods %}<span>{{ food }}</span>{% endfor %}</div></div><div><p class="eyebrow light">The route</p><ol class="stops">{% for stop in tour.stops %}<li><span>{{ '%02d'|format(loop.index) }}</span>{{ stop }}</li>{% endfor %}</ol></div></section>
+<section class="tour-gallery section">{% for image in tour.images %}<img src="{{ url_for('static', filename=image) }}" alt="{{ tour.title }} tour, photograph {{ loop.index }}" loading="lazy">{% endfor %}</section>
+<section class="final-message"><span>✦</span><blockquote>“{{ tour.final_message }}”</blockquote><a class="button" href="#main">Reserve your place</a></section>
+{% endblock %}

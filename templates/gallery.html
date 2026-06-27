@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Gallery — Turkish Delight{% endblock %}
+{% block content %}
+<section class="page-hero gallery-page-hero"><p class="eyebrow light">Postcards from İzmir</p><h1>A city to<br><em>savour.</em></h1><p>Food, architecture, guides, and moments collected along our four routes.</p></section>
+<section class="gallery-page-grid">{% for image in gallery %}<button type="button" data-lightbox="{{ url_for('static', filename=image) }}" aria-label="Enlarge gallery image"><img src="{{ url_for('static', filename=image) }}" alt="A moment from a Turkish Delight tour" loading="lazy"></button>{% endfor %}</section>
+<dialog class="lightbox" data-lightbox-dialog><button type="button" aria-label="Close image" data-lightbox-close>×</button><img src="" alt="Enlarged tour photograph"></dialog>
+{% endblock %}

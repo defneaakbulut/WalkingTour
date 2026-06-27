@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Tours — Turkish Delight{% endblock %}
+{% block content %}
+<section class="page-hero tours-page-hero"><p class="eyebrow">Explore İzmir</p><h1>Food, history,<br><em>and local stories.</em></h1><p>Filter by date, duration, or language, then open any tour for its complete route, tastes, guide, schedule, and gallery.</p></section>
+<section class="section tours-section">
+  <form class="filters" action="{{ url_for('tours') }}" method="get">
+    <label><span>Date</span><input type="date" name="date" min="{{ today }}" value="{{ request.args.get('date','') }}"></label>
+    <label><span>Duration</span><select name="duration"><option value="">Any length</option><option value="120" {% if request.args.get('duration')=='120' %}selected{% endif %}>Up to 2 hours</option><option value="180" {% if request.args.get('duration')=='180' %}selected{% endif %}>Up to 3 hours</option><option value="240" {% if request.args.get('duration')=='240' %}selected{% endif %}>Up to 4 hours</option></select></label>
+    <label><span>Language</span><select name="language"><option value="">All languages</option>{% for language in languages %}<option {% if request.args.get('language')==language %}selected{% endif %}>{{ language }}</option>{% endfor %}</select></label>
+    <button class="button button-dark" type="submit">Find tours</button>
+    {% if request.args %}<a class="clear-filter" href="{{ url_for('tours') }}">Clear</a>{% endif %}
+  </form>
+  <div class="tour-grid">
+    {% for tour in tours %}
+    <article class="tour-card">
+      <a class="tour-card-image" href="{{ url_for('tour_detail', tour_id=tour.id) }}"><img src="{{ url_for('static', filename=tour.images[0]) }}" alt="{{ tour.title }}"><span class="card-number">{{ '%02d'|format(loop.index) }}</span><span class="card-arrow">↗</span></a>
+      <div class="tour-card-body"><p class="tour-meta">{{ tour.duration }} minutes · {{ tour.language }}</p><h3><a href="{{ url_for('tour_detail', tour_id=tour.id) }}">{{ tour.title }}</a></h3><p class="tour-subtitle">{{ tour.subtitle }}</p><p>{{ tour.description }}</p><div class="food-tags">{% for food in tour.foods %}<span>{{ food }}</span>{% endfor %}</div></div>
+    </article>
+    {% else %}<div class="empty-state"><h3>No matching walks yet.</h3><p>Try widening your filters.</p></div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

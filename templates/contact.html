@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Contact — Turkish Delight{% endblock %}
+{% block content %}
+<section class="contact-page">
+  <div class="contact-page-copy"><p class="eyebrow">Come walk with us</p><h1>Your İzmir story<br>starts <em>here.</em></h1><p>Questions, private group requests, or just curious where to find the best boyoz? Write to us.</p><a href="mailto:hello@turkishdelight.tours">hello@turkishdelight.tours</a><div class="socials"><a href="#" aria-label="Instagram">ig</a><a href="#" aria-label="Facebook">fb</a><a href="#" aria-label="TikTok">tk</a></div></div>
+  <form class="contact-form contact-page-form" action="{{ url_for('contact') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Your name<input type="text" name="name" required maxlength="100"></label><label>Email address<input type="email" name="email" required maxlength="200"></label><label>Tell us what’s on your mind<textarea name="message" rows="5" minlength="10" required></textarea></label><button class="button button-dark" type="submit">Send message →</button></form>
+</section>
+{% endblock %}
