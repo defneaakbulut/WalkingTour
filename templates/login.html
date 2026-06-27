@@ -11,7 +11,9 @@
       </video>
     </div>
     <div class="auth-panel">
-      <p class="eyebrow">Welcome back</p>
+      <div class="auth-decoration" aria-hidden="true">
+        <img src="{{ url_for('static', filename='decoration1.png') }}" alt="">
+      </div>
       <h1>Continue your<br><em>journey.</em></h1>
       <form method="post" class="stack-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

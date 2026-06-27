@@ -16,7 +16,7 @@
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <header class="site-header{% if request.endpoint == 'home' %} site-header-overlay{% endif %}" data-header>
+    <header class="site-header{% if request.endpoint in ['home', 'tour_detail'] %} site-header-overlay{% endif %}" data-header>
       <a class="brand" href="{{ url_for('home') }}" aria-label="Turkish Delight home">
         <span>Turkish Delight</span>
       </a>

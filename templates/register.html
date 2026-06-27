@@ -5,9 +5,15 @@
 {% block content %}
   <section class="auth-page">
     <div class="auth-image">
-      <img src="{{ url_for('static', filename='Tour1_4.jpg') }}" alt="Sweets shared in İzmir">
+      <video autoplay muted loop playsinline preload="metadata" aria-label="Turkish tea and food tour scenes">
+        <source src="{{ url_for('static', filename='ÇayDöner.mp4') }}" type="video/mp4">
+        Your browser does not support HTML video.
+      </video>
     </div>
     <div class="auth-panel">
+      <div class="auth-decoration" aria-hidden="true">
+        <img src="{{ url_for('static', filename='decoration1.png') }}" alt="">
+      </div>
       <h1>Create your<br><em>account.</em></h1>
       <form method="post" class="stack-form" data-register>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
