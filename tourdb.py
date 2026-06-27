@@ -246,6 +246,8 @@ def seed_sample_tours(db, user_ids, today, now):
             ["guide_id", "title", "subtitle", "description", "story", "final_message", "foods",
              "stops", "story_points", "meeting_point", "duration", "language", "capacity"], values
         ))
+        data["story"] = ""
+        data["final_message"] = ""
         tour_ids.append(create_tour(db, data.pop("guide_id"), data, schedules))
     for participant_id, tour_id, days_ahead in [
         (user_ids[4], tour_ids[0], 5), (user_ids[5], tour_ids[1], 6), (user_ids[6], tour_ids[3], 3)

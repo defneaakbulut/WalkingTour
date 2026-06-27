@@ -123,11 +123,10 @@
                         </ol>
                       </div>
                     </div>
-                    <h4>Story highlights</h4>
+                    <h4>Tour highlights</h4>
                     <ul>
                       {% for point in tour.story_points %}<li>{{ point }}</li>{% endfor %}
                     </ul>
-                    <blockquote>“{{ tour.final_message }}”</blockquote>
                     <a class="text-link" href="{{ url_for('tour_detail', tour_id=tour.id) }}">
                       Open public tour page →
                     </a>

@@ -1572,6 +1572,119 @@ h2 em {
     }
 }
 
+/* Tour title, information panel, and weekly facts */
+.tour-title-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, .7fr);
+    gap: 5rem;
+    align-items: start
+}
+
+.tour-title-copy {
+    padding-top: 1rem
+}
+
+.tour-title-copy>p:last-child {
+    max-width: 800px;
+    margin: 0;
+    font: 500 clamp(1.1rem, 1.7vw, 1.4rem)/1.55 var(--serif)
+}
+
+.tour-title-section .overview-info {
+    position: static
+}
+
+.tour-overview {
+    display: block
+}
+
+.tour-overview-copy {
+    width: 100%
+}
+
+.tour-overview .detail-bar {
+    grid-template-columns: repeat(4, 1fr)
+}
+
+.tour-overview .detail-bar span:last-child {
+    border-right: 0
+}
+
+@media(max-width:950px) {
+    .tour-title-section {
+        grid-template-columns: 1fr;
+        gap: 3rem
+    }
+}
+
+@media(max-width:800px) and (min-width:621px) {
+    .tour-overview .detail-bar {
+        grid-template-columns: 1fr 1fr
+    }
+
+    .tour-overview .detail-bar span {
+        padding: 1rem;
+        border-bottom: 1px solid var(--line)
+    }
+}
+
+.tour-title-copy .detail-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 2.5rem;
+    padding: 1.5rem 0;
+    background: transparent;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink)
+}
+
+.tour-title-copy .detail-bar span {
+    padding: 0 1rem;
+    border-right: 1px solid var(--line)
+}
+
+.tour-title-copy .detail-bar span:first-child {
+    padding-left: 0
+}
+
+.tour-title-copy .detail-bar span:last-child {
+    padding-right: 0;
+    border-right: 0
+}
+
+.tour-title-copy .detail-bar small {
+    color: var(--sea);
+    margin-bottom: .25rem
+}
+
+@media(max-width:800px) {
+    .tour-title-copy .detail-bar {
+        grid-template-columns: 1fr 1fr
+    }
+
+    .tour-title-copy .detail-bar span {
+        padding: 1rem;
+        border-bottom: 1px solid var(--line)
+    }
+}
+
+@media(max-width:620px) {
+    .tour-title-copy .detail-bar {
+        grid-template-columns: 1fr
+    }
+
+    .tour-title-copy .detail-bar span {
+        padding: 1rem 0;
+        border-right: 0
+    }
+
+    .tour-title-copy .detail-bar span:last-child {
+        border-bottom: 0
+    }
+}
+
 @media(prefers-reduced-motion:reduce) {
     * {
         scroll-behavior: auto !important;
@@ -3217,6 +3330,10 @@ h2 em {
     position: static
 }
 
+.tour-overview-copy .detail-bar {
+    margin-top: 0
+}
+
 .journey-section .booking-card {
     top: 1.5rem;
     padding: 2.5rem;
@@ -3296,5 +3413,31 @@ h2 em {
         flex-basis: 84vw;
         width: 84vw;
         height: 310px
+    }
+}
+
+/* Light tasting section aligned with the journey */
+.tour-tastes {
+    width: 84%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 4rem 0;
+    background: transparent;
+    color: var(--ink)
+}
+
+.tour-tastes .eyebrow {
+    color: var(--sea)
+}
+
+.tour-tastes .taste-list span {
+    color: var(--ink);
+    border-color: var(--line)
+}
+
+@media(max-width:620px) {
+    .tour-tastes {
+        width: 90%;
+        padding: 3rem 0
     }
 }

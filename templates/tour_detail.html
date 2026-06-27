@@ -4,15 +4,10 @@
 
 {% block content %}
   <section class="tour-title-section">
-    <p class="eyebrow">{{ tour.subtitle }}</p>
-    <h1>{{ tour.title }}</h1>
-    <p>{{ tour.description }}</p>
-  </section>
-
-  <section class="section tour-overview">
-    <div class="tour-overview-copy">
-      <p class="eyebrow">The experience</p>
-      <p class="lead">{{ tour.story }}</p>
+    <div class="tour-title-copy">
+      <p class="eyebrow">{{ tour.subtitle }}</p>
+      <h1>{{ tour.title }}</h1>
+      <p>{{ tour.description }}</p>
       <div class="detail-bar">
         <span>
           <small>Duration</small>
@@ -21,16 +16,21 @@
         </span>
         <span><small>Maximum group</small>{{ tour.capacity }} people</span>
         <span><small>Language</small>{{ tour.language }}</span>
+        <span>
+          <small>Weekly schedule</small>
+          {% for schedule in schedules %}
+            {{ weekdays[schedule.weekday] }} at {{ schedule.start_time }}{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        </span>
       </div>
     </div>
-
     <aside class="journey-info overview-info">
       <div>
         <p class="eyebrow">Meeting point</p>
         <h3>{{ tour.meeting_point }}</h3>
       </div>
       <div>
-        <p class="eyebrow">Stories along the way</p>
+        <p class="eyebrow">Highlights along the way</p>
         <ul>
           {% for point in tour.story_points %}
             <li>{{ point }}</li>
@@ -48,6 +48,15 @@
         loading="lazy"
       >
     {% endfor %}
+  </section>
+
+  <section class="taste-section tour-tastes">
+    <div>
+      <h2>What you’ll <em>taste.</em></h2>
+    </div>
+    <div class="taste-list">
+      {% for food in tour.foods %}<span>{{ food }}</span>{% endfor %}
+    </div>
   </section>
 
   <section class="section journey-section">
@@ -109,15 +118,5 @@
         <p class="booking-new">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
       {% endif %}
     </aside>
-  </section>
-
-  <section class="taste-section tour-tastes">
-    <div>
-      <p class="eyebrow light">Along the way</p>
-      <h2>What you’ll <em>taste.</em></h2>
-    </div>
-    <div class="taste-list">
-      {% for food in tour.foods %}<span>{{ food }}</span>{% endfor %}
-    </div>
   </section>
 {% endblock %}

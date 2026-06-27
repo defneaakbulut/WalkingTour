@@ -6,7 +6,7 @@
   <section class="form-page">
     <div>
       <p class="eyebrow">Guide studio</p>
-      <h1>{{ 'Refine your' if tour else 'Create a new' }}<br><em>walking story.</em></h1>
+      <h1>{{ 'Refine your' if tour else 'Create a new' }}<br><em>walking tour.</em></h1>
       {% if locked %}
         <p class="notice">
           This tour has reservations. Its schedule, meeting point, duration, language, and capacity are now locked.
@@ -29,14 +29,6 @@
         Short description
         <textarea name="description" rows="3" required>{{ tour.description if tour else '' }}</textarea>
       </label>
-      <label>
-        The story
-        <textarea name="story" rows="4" required>{{ tour.story if tour else '' }}</textarea>
-      </label>
-      <label>
-        Final message
-        <textarea name="final_message" rows="2" required>{{ tour.final_message if tour else '' }}</textarea>
-      </label>
       <div class="form-row">
         <label>
           Foods <small>comma-separated</small>
@@ -58,7 +50,7 @@
           <textarea name="stops" rows="6" required>{{ tour.stops|join('\n') if tour else '' }}</textarea>
         </label>
         <label>
-          Story highlights <small>one per line</small>
+          Tour highlights <small>one per line</small>
           <textarea name="story_points" rows="6">{{ tour.story_points|join('\n') if tour else '' }}</textarea>
         </label>
       </div>

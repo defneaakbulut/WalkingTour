@@ -364,8 +364,7 @@ def cancel_reservation(reservation_id):
 def parse_tour_form(existing=None):
     data = {
         "title": request.form.get("title", "").strip(), "subtitle": request.form.get("subtitle", "").strip(),
-        "description": request.form.get("description", "").strip(), "story": request.form.get("story", "").strip(),
-        "final_message": request.form.get("final_message", "").strip(),
+        "description": request.form.get("description", "").strip(), "story": "", "final_message": "",
         "meeting_point": request.form.get("meeting_point", "").strip(), "language": request.form.get("language", ""),
         "foods": [x.strip() for x in request.form.get("foods", "").split(",") if x.strip()],
         "stops": [x.strip() for x in request.form.get("stops", "").splitlines() if x.strip()],
