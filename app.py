@@ -8,10 +8,14 @@ from pathlib import Path
 
 from flask import (Flask, abort, flash, g, redirect, render_template, request,
                    session, url_for)
-from flask_login import (LoginManager, UserMixin, current_user, login_required,
+from flask_login import (LoginManager, current_user, login_required,
                          login_user, logout_user)
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
+
+import tourdb
+import userdb
+from user import User
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -47,24 +51,9 @@ def close_db(_error=None):
         db.close()
 
 
-class User(UserMixin):
-    def __init__(self, row):
-        self.id = row["id"]
-        self.first_name = row["first_name"]
-        self.last_name = row["last_name"]
-        self.email = row["email"]
-        self.role = row["role"]
-        self.languages = json.loads(row["languages"] or "[]")
-
-    @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
-
-
 @login_manager.user_loader
 def load_user(user_id):
-    row = get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    return User(row) if row else None
+    return userdb.get_user(get_db(), user_id)
 
 
 def csrf_token():
@@ -111,9 +100,7 @@ def tour_from_row(row):
 
 
 def next_occurrences(tour_id, limit=10):
-    schedule_rows = get_db().execute(
-        "SELECT weekday, start_time FROM schedules WHERE tour_id = ? ORDER BY weekday", (tour_id,)
-    ).fetchall()
+    schedule_rows = tourdb.schedules_for_tour(get_db(), tour_id)
     schedule = {row["weekday"]: row["start_time"] for row in schedule_rows}
     results = []
     day = date.today()
@@ -123,12 +110,7 @@ def next_occurrences(tour_id, limit=10):
             start = schedule[candidate.weekday()]
             start_dt = datetime.combine(candidate, datetime.strptime(start, "%H:%M").time())
             if start_dt > datetime.now():
-                booked = get_db().execute(
-                    """SELECT COUNT(*) + COALESCE(SUM((SELECT COUNT(*) FROM reservation_guests rg
-                       WHERE rg.reservation_id = r.id)), 0) AS total
-                       FROM reservations r WHERE tour_id = ? AND tour_date = ?""",
-                    (tour_id, candidate.isoformat()),
-                ).fetchone()["total"]
+                booked = tourdb.booked_places(get_db(), tour_id, candidate.isoformat())
                 results.append({"date": candidate.isoformat(), "label": candidate.strftime("%a, %d %b"),
                                 "time": start, "booked": booked or 0})
                 if len(results) >= limit:
@@ -138,26 +120,18 @@ def next_occurrences(tour_id, limit=10):
 
 @app.route("/")
 def home():
-    query = """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
-               FROM tours t JOIN users u ON u.id = t.guide_id WHERE 1=1"""
-    params = []
     language = request.args.get("language", "")
     duration = request.args.get("duration", "")
     requested_date = request.args.get("date", "")
-    if language in LANGUAGES:
-        query += " AND t.language = ?"
-        params.append(language)
-    if duration in {"120", "180", "240"}:
-        query += " AND t.duration <= ?"
-        params.append(int(duration))
+    selected_language = language if language in LANGUAGES else ""
+    max_duration = int(duration) if duration in {"120", "180", "240"} else None
+    weekday = None
     if requested_date:
         try:
             weekday = date.fromisoformat(requested_date).weekday()
-            query += " AND EXISTS (SELECT 1 FROM schedules s WHERE s.tour_id = t.id AND s.weekday = ?)"
-            params.append(weekday)
         except ValueError:
             flash("Please choose a valid date.", "error")
-    rows = get_db().execute(query + " ORDER BY t.id", params).fetchall()
+    rows = tourdb.list_tours(get_db(), selected_language, max_duration, weekday)
     tours = [tour_from_row(row) for row in rows]
     return render_template("home.html", tours=tours, languages=LANGUAGES,
                            today=date.today().isoformat())
@@ -170,21 +144,11 @@ def tours():
 
 @app.route("/guides")
 def guides():
-    rows = get_db().execute(
-        """SELECT * FROM users WHERE role = 'guide'
-           ORDER BY CASE email
-             WHEN 'isil@turkishdelight.test' THEN 1
-             WHEN 'deniz@turkishdelight.test' THEN 2
-             WHEN 'ilker@turkishdelight.test' THEN 3
-             WHEN 'nisan@turkishdelight.test' THEN 4
-             ELSE 5 END, id"""
-    ).fetchall()
+    rows = userdb.list_guides(get_db(), public_order=True)
     guide_list = []
     for row in rows:
         guide = User(row)
-        guide_tours = get_db().execute(
-            "SELECT id, title, subtitle FROM tours WHERE guide_id = ? ORDER BY id", (guide.id,)
-        ).fetchall()
+        guide_tours = tourdb.tours_for_guide(get_db(), guide.id, summary=True)
         image = "Logo.png"
         for tour in guide_tours:
             candidate = BASE_DIR / "static" / f"Guide{tour['id']}.jpg"
@@ -197,15 +161,10 @@ def guides():
 
 @app.route("/guides/<int:guide_id>")
 def guide_detail(guide_id):
-    row = get_db().execute(
-        "SELECT * FROM users WHERE id=? AND role='guide'", (guide_id,)
-    ).fetchone()
-    if not row:
+    guide = userdb.get_guide(get_db(), guide_id)
+    if not guide:
         abort(404)
-    guide = User(row)
-    tour_rows = get_db().execute(
-        "SELECT * FROM tours WHERE guide_id=? ORDER BY id", (guide_id,)
-    ).fetchall()
+    tour_rows = tourdb.tours_for_guide(get_db(), guide_id)
     guide_tours = [tour_from_row(tour) for tour in tour_rows]
     image = "Homepage.jpg"
     for tour in guide_tours:
@@ -218,15 +177,10 @@ def guide_detail(guide_id):
 
 @app.route("/tour/<int:tour_id>")
 def tour_detail(tour_id):
-    row = get_db().execute(
-        """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
-           FROM tours t JOIN users u ON u.id = t.guide_id WHERE t.id = ?""", (tour_id,)
-    ).fetchone()
+    row = tourdb.get_tour_with_guide(get_db(), tour_id)
     if not row:
         abort(404)
-    schedules = get_db().execute(
-        "SELECT weekday, start_time FROM schedules WHERE tour_id = ? ORDER BY weekday", (tour_id,)
-    ).fetchall()
+    schedules = tourdb.schedules_for_tour(get_db(), tour_id)
     return render_template("tour_detail.html", tour=tour_from_row(row), schedules=schedules,
                            occurrences=next_occurrences(tour_id))
 
@@ -248,17 +202,13 @@ def register():
         if len(password) < 8: errors.append("Password must be at least 8 characters.")
         if role not in {"guide", "participant"}: errors.append("Choose an account type.")
         if role == "guide" and not languages: errors.append("Guides must choose at least one language.")
-        if get_db().execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+        if userdb.email_exists(get_db(), email):
             errors.append("An account with that email already exists.")
         if errors:
             for error in errors: flash(error, "error")
         else:
-            cur = get_db().execute(
-                "INSERT INTO users(first_name,last_name,email,password_hash,role,languages) VALUES(?,?,?,?,?,?)",
-                (first, last, email, generate_password_hash(password), role, json.dumps(languages)),
-            )
-            get_db().commit()
-            login_user(load_user(cur.lastrowid))
+            user_id = userdb.create_user(get_db(), first, last, email, password, role, languages)
+            login_user(load_user(user_id))
             flash("Welcome to Turkish Delight!", "success")
             return redirect(url_for("profile"))
     return render_template("register.html", languages=LANGUAGES)
@@ -270,7 +220,7 @@ def login():
         return redirect(url_for("profile"))
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        row = get_db().execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        row = userdb.get_user_by_email(get_db(), email)
         if row and check_password_hash(row["password_hash"], request.form.get("password", "")):
             login_user(User(row), remember=bool(request.form.get("remember")))
             return redirect(request.args.get("next") or url_for("profile"))
@@ -293,44 +243,27 @@ def profile():
     if current_user.role == "admin":
         return redirect(url_for("admin_dashboard"))
     if current_user.role == "participant":
-        reservations = db.execute(
-            """SELECT r.*, t.title, t.meeting_point, t.duration,
-               (SELECT start_time FROM schedules s WHERE s.tour_id=t.id AND s.weekday=CAST(strftime('%w',r.tour_date) AS INTEGER)-1) AS start_time
-               FROM reservations r JOIN tours t ON t.id=r.tour_id
-               WHERE r.participant_id=? ORDER BY r.tour_date""", (current_user.id,)
-        ).fetchall()
+        reservations = tourdb.participant_reservations(db, current_user.id)
         enriched = []
         for reservation in reservations:
             item = dict(reservation)
-            item["guests"] = db.execute(
-                "SELECT name FROM reservation_guests WHERE reservation_id=?", (item["id"],)
-            ).fetchall()
-            start = item["start_time"] or db.execute(
-                "SELECT start_time FROM schedules WHERE tour_id=? AND weekday=?",
-                (item["tour_id"], date.fromisoformat(item["tour_date"]).weekday()),
-            ).fetchone()["start_time"]
+            item["guests"] = tourdb.reservation_guests(db, item["id"])
+            schedule = tourdb.schedule_for_day(
+                db, item["tour_id"], date.fromisoformat(item["tour_date"]).weekday()
+            )
+            start = item["start_time"] or schedule["start_time"]
             item["start_time"] = start
             start_dt = datetime.combine(date.fromisoformat(item["tour_date"]), datetime.strptime(start, "%H:%M").time())
             item["can_cancel"] = start_dt - datetime.now() >= timedelta(hours=24)
             enriched.append(item)
         return render_template("participant_profile.html", reservations=enriched)
-    tours = db.execute("SELECT * FROM tours WHERE guide_id=? ORDER BY id", (current_user.id,)).fetchall()
+    tours = tourdb.tours_for_guide(db, current_user.id)
     summaries = []
     for row in tours:
         item = tour_from_row(row)
-        item["reservation_count"] = db.execute(
-            "SELECT COUNT(*) FROM reservations WHERE tour_id=?", (row["id"],)
-        ).fetchone()[0]
-        item["dates"] = db.execute(
-            """SELECT r.tour_date, COUNT(r.id) + COALESCE(SUM((SELECT COUNT(*) FROM reservation_guests rg WHERE rg.reservation_id=r.id)),0) total
-               FROM reservations r WHERE r.tour_id=? GROUP BY r.tour_date ORDER BY r.tour_date""", (row["id"],)
-        ).fetchall()
-        item["bookings"] = db.execute(
-            """SELECT r.tour_date, u.first_name || ' ' || u.last_name AS participant_name,
-               1 + (SELECT COUNT(*) FROM reservation_guests rg WHERE rg.reservation_id=r.id) AS group_size
-               FROM reservations r JOIN users u ON u.id=r.participant_id
-               WHERE r.tour_id=? ORDER BY r.tour_date, u.last_name""", (row["id"],)
-        ).fetchall()
+        item["reservation_count"] = tourdb.reservation_count(db, row["id"])
+        item["dates"] = tourdb.guide_tour_dates(db, row["id"])
+        item["bookings"] = tourdb.guide_tour_bookings(db, row["id"])
         summaries.append(item)
     return render_template("guide_profile.html", tours=summaries)
 
@@ -340,35 +273,22 @@ def profile():
 def admin_dashboard():
     db = get_db()
     statistics = {
-        "guides": db.execute("SELECT COUNT(*) FROM users WHERE role='guide'").fetchone()[0],
-        "participants": db.execute("SELECT COUNT(*) FROM users WHERE role='participant'").fetchone()[0],
-        "tours": db.execute("SELECT COUNT(*) FROM tours").fetchone()[0],
-        "reservations": db.execute("SELECT COUNT(*) FROM reservations").fetchone()[0],
+        "guides": userdb.count_role(db, "guide"),
+        "participants": userdb.count_role(db, "participant"),
+        "tours": tourdb.tour_count(db),
+        "reservations": tourdb.reservation_count(db),
     }
-    reservations_by_language = db.execute(
-        """SELECT t.language, COUNT(r.id) AS total
-           FROM tours t LEFT JOIN reservations r ON r.tour_id=t.id
-           GROUP BY t.language ORDER BY total DESC, t.language"""
-    ).fetchall()
-    guide_rows = db.execute(
-        "SELECT * FROM users WHERE role='guide' ORDER BY last_name, first_name"
-    ).fetchall()
+    reservations_by_language = tourdb.reservations_by_language(db)
+    guide_rows = userdb.list_guides(db)
     guides = []
     for guide_row in guide_rows:
         guide = User(guide_row)
-        tour_rows = db.execute(
-            "SELECT * FROM tours WHERE guide_id=? ORDER BY title", (guide.id,)
-        ).fetchall()
+        tour_rows = tourdb.tours_for_guide(db, guide.id)
         detailed_tours = []
         for tour_row in tour_rows:
             tour = tour_from_row(tour_row)
-            tour["schedules"] = db.execute(
-                "SELECT weekday,start_time FROM schedules WHERE tour_id=? ORDER BY weekday",
-                (tour["id"],),
-            ).fetchall()
-            tour["reservation_count"] = db.execute(
-                "SELECT COUNT(*) FROM reservations WHERE tour_id=?", (tour["id"],)
-            ).fetchone()[0]
+            tour["schedules"] = tourdb.schedules_for_tour(db, tour["id"])
+            tour["reservation_count"] = tourdb.reservation_count(db, tour["id"])
             detailed_tours.append(tour)
         guides.append({"user": guide, "tours": detailed_tours})
     return render_template(
@@ -381,16 +301,14 @@ def admin_dashboard():
 @role_required("participant")
 def book_tour(tour_id):
     db = get_db()
-    tour = db.execute("SELECT * FROM tours WHERE id=?", (tour_id,)).fetchone()
+    tour = tourdb.get_tour(db, tour_id)
     if not tour: abort(404)
     try:
         tour_date = date.fromisoformat(request.form.get("tour_date", ""))
     except ValueError:
         flash("Choose a valid tour date.", "error")
         return redirect(url_for("tour_detail", tour_id=tour_id))
-    schedule = db.execute(
-        "SELECT start_time FROM schedules WHERE tour_id=? AND weekday=?", (tour_id, tour_date.weekday())
-    ).fetchone()
+    schedule = tourdb.schedule_for_day(db, tour_id, tour_date.weekday())
     if not schedule:
         flash("This tour is not offered on that day.", "error")
         return redirect(url_for("tour_detail", tour_id=tour_id))
@@ -402,36 +320,26 @@ def book_tour(tour_id):
     if len(guests) > 3 or any(len(name.split()) < 2 for name in guests):
         flash("Add up to three guests, each with a first and last name.", "error")
         return redirect(url_for("tour_detail", tour_id=tour_id))
-    booked = db.execute(
-        """SELECT COUNT(*) + COALESCE(SUM((SELECT COUNT(*) FROM reservation_guests rg WHERE rg.reservation_id=r.id)),0)
-           FROM reservations r WHERE tour_id=? AND tour_date=?""", (tour_id, tour_date.isoformat())
-    ).fetchone()[0]
+    booked = tourdb.booked_places(db, tour_id, tour_date.isoformat())
     if booked + 1 + len(guests) > tour["capacity"]:
         flash("There are not enough places left for this group.", "error")
         return redirect(url_for("tour_detail", tour_id=tour_id))
-    if db.execute("SELECT 1 FROM reservations WHERE participant_id=? AND tour_id=? AND tour_date=?",
-                  (current_user.id, tour_id, tour_date.isoformat())).fetchone():
+    if tourdb.reservation_exists(db, current_user.id, tour_id, tour_date.isoformat()):
         flash("You already have a reservation for this tour date.", "error")
         return redirect(url_for("tour_detail", tour_id=tour_id))
-    existing = db.execute(
-        """SELECT r.tour_date, t.duration, s.start_time FROM reservations r
-           JOIN tours t ON t.id=r.tour_id JOIN schedules s ON s.tour_id=t.id AND s.weekday=?
-           WHERE r.participant_id=? AND r.tour_date=?""",
-        (tour_date.weekday(), current_user.id, tour_date.isoformat()),
-    ).fetchall()
+    existing = tourdb.overlapping_reservations(
+        db, current_user.id, tour_date.isoformat(), tour_date.weekday()
+    )
     new_end = start_dt + timedelta(minutes=tour["duration"])
     for other in existing:
         other_start = datetime.combine(tour_date, datetime.strptime(other["start_time"], "%H:%M").time())
         if start_dt < other_start + timedelta(minutes=other["duration"]) and other_start < new_end:
             flash("This tour overlaps another reservation in your schedule.", "error")
             return redirect(url_for("tour_detail", tour_id=tour_id))
-    cur = db.execute(
-        "INSERT INTO reservations(participant_id,tour_id,tour_date,created_at) VALUES(?,?,?,?)",
-        (current_user.id, tour_id, tour_date.isoformat(), datetime.now().isoformat(timespec="seconds")),
+    tourdb.create_reservation(
+        db, current_user.id, tour_id, tour_date.isoformat(), guests,
+        datetime.now().isoformat(timespec="seconds"),
     )
-    for name in guests:
-        db.execute("INSERT INTO reservation_guests(reservation_id,name) VALUES(?,?)", (cur.lastrowid, name))
-    db.commit()
     flash("Your place is reserved. See you in İzmir!", "success")
     return redirect(url_for("profile"))
 
@@ -440,19 +348,15 @@ def book_tour(tour_id):
 @role_required("participant")
 def cancel_reservation(reservation_id):
     db = get_db()
-    reservation = db.execute(
-        "SELECT * FROM reservations WHERE id=? AND participant_id=?", (reservation_id, current_user.id)
-    ).fetchone()
+    reservation = tourdb.get_participant_reservation(db, reservation_id, current_user.id)
     if not reservation: abort(404)
     tour_day = date.fromisoformat(reservation["tour_date"])
-    schedule = db.execute("SELECT start_time FROM schedules WHERE tour_id=? AND weekday=?",
-                          (reservation["tour_id"], tour_day.weekday())).fetchone()
+    schedule = tourdb.schedule_for_day(db, reservation["tour_id"], tour_day.weekday())
     start_dt = datetime.combine(tour_day, datetime.strptime(schedule["start_time"], "%H:%M").time())
     if start_dt - datetime.now() < timedelta(hours=24):
         flash("Reservations can only be cancelled at least 24 hours before the tour.", "error")
     else:
-        db.execute("DELETE FROM reservations WHERE id=?", (reservation_id,))
-        db.commit()
+        tourdb.cancel_reservation(db, reservation_id)
         flash("Your reservation has been cancelled.", "success")
     return redirect(url_for("profile"))
 
@@ -496,18 +400,10 @@ def new_tour():
             for error in errors: flash(error, "error")
         else:
             db = get_db()
-            cur = db.execute(
-                """INSERT INTO tours(guide_id,title,subtitle,description,story,final_message,foods,stops,story_points,
-                   meeting_point,duration,language,capacity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (current_user.id, data["title"], data["subtitle"], data["description"], data["story"], data["final_message"],
-                 json.dumps(data["foods"]), json.dumps(data["stops"]), json.dumps(data["story_points"]),
-                 data["meeting_point"], data["duration"], data["language"], data["capacity"]),
-            )
-            for weekday, start in schedules: db.execute("INSERT INTO schedules VALUES(?,?,?)", (cur.lastrowid, weekday, start))
+            tour_id = tourdb.create_tour(db, current_user.id, data, schedules)
             for number, photo in enumerate(photos, 1):
                 suffix = Path(photo.filename).suffix.lower()
-                photo.save(BASE_DIR / "static" / f"Tour{cur.lastrowid}_{number}{suffix}")
-            db.commit()
+                photo.save(BASE_DIR / "static" / f"Tour{tour_id}_{number}{suffix}")
             flash("Tour created.", "success")
             return redirect(url_for("profile"))
     return render_template("tour_form.html", tour=None, languages=current_user.languages, schedule={})
@@ -517,30 +413,21 @@ def new_tour():
 @role_required("guide")
 def edit_tour(tour_id):
     db = get_db()
-    row = db.execute("SELECT * FROM tours WHERE id=? AND guide_id=?", (tour_id, current_user.id)).fetchone()
+    row = tourdb.get_tour(db, tour_id, current_user.id)
     if not row: abort(404)
-    has_reservations = bool(db.execute("SELECT 1 FROM reservations WHERE tour_id=?", (tour_id,)).fetchone())
+    has_reservations = tourdb.has_tour_reservations(db, tour_id)
     if request.method == "POST":
         data, schedules, errors = parse_tour_form(row)
         if errors:
             for error in errors: flash(error, "error")
         else:
             if has_reservations:
-                db.execute("""UPDATE tours SET title=?,subtitle=?,description=?,story=?,final_message=?,foods=?,stops=?,story_points=? WHERE id=?""",
-                           (data["title"],data["subtitle"],data["description"],data["story"],data["final_message"],
-                            json.dumps(data["foods"]),json.dumps(data["stops"]),json.dumps(data["story_points"]),tour_id))
+                tourdb.update_tour(db, tour_id, data, essential=False)
             else:
-                db.execute("""UPDATE tours SET title=?,subtitle=?,description=?,story=?,final_message=?,foods=?,stops=?,story_points=?,
-                           meeting_point=?,duration=?,language=?,capacity=? WHERE id=?""",
-                           (data["title"],data["subtitle"],data["description"],data["story"],data["final_message"],
-                            json.dumps(data["foods"]),json.dumps(data["stops"]),json.dumps(data["story_points"]),
-                            data["meeting_point"],data["duration"],data["language"],data["capacity"],tour_id))
-                db.execute("DELETE FROM schedules WHERE tour_id=?", (tour_id,))
-                for weekday, start in schedules: db.execute("INSERT INTO schedules VALUES(?,?,?)", (tour_id,weekday,start))
-            db.commit()
+                tourdb.update_tour(db, tour_id, data, schedules, essential=True)
             flash("Tour updated.", "success")
             return redirect(url_for("profile"))
-    schedule = {r["weekday"]: r["start_time"] for r in db.execute("SELECT * FROM schedules WHERE tour_id=?",(tour_id,))}
+    schedule = tourdb.schedule_map(db, tour_id)
     return render_template("tour_form.html", tour=tour_from_row(row), languages=current_user.languages,
                            schedule=schedule, locked=has_reservations)
 
@@ -549,10 +436,10 @@ def edit_tour(tour_id):
 @role_required("guide")
 def submit_report(tour_id):
     db = get_db()
-    tour = db.execute("SELECT * FROM tours WHERE id=? AND guide_id=?", (tour_id,current_user.id)).fetchone()
+    tour = tourdb.get_tour(db, tour_id, current_user.id)
     if not tour: abort(404)
     tour_date = request.form.get("tour_date", "")
-    if not db.execute("SELECT 1 FROM reservations WHERE tour_id=? AND tour_date=?",(tour_id,tour_date)).fetchone():
+    if not tourdb.date_has_reservations(db, tour_id, tour_date):
         flash("Only dates with reservations can be reported.", "error")
         return redirect(url_for("profile"))
     try:
@@ -571,10 +458,7 @@ def submit_report(tour_id):
         return redirect(url_for("profile"))
     filename = secure_filename(f"tour-{tour_id}-{tour_date}-{photo.filename}")
     photo.save(Path(app.config["UPLOAD_FOLDER"]) / filename)
-    db.execute("""INSERT INTO reports(tour_id,tour_date,attendees,evidence_photo) VALUES(?,?,?,?)
-                ON CONFLICT(tour_id,tour_date) DO UPDATE SET attendees=excluded.attendees,evidence_photo=excluded.evidence_photo""",
-               (tour_id,tour_date,attended,filename))
-    db.commit()
+    tourdb.save_report(db, tour_id, tour_date, attended, filename)
     flash("Post-tour report saved.", "success")
     return redirect(url_for("profile"))
 
@@ -590,91 +474,12 @@ def forbidden(_error): return render_template("error.html", code=403, message="T
 def init_db():
     db = get_db()
     db.executescript((BASE_DIR / "schema.sql").read_text())
-    migrate_admin_role(db)
-    db.execute("CREATE UNIQUE INDEX IF NOT EXISTS one_platform_admin ON users(role) WHERE role='admin'")
-    if not db.execute("SELECT 1 FROM users").fetchone():
-        seed_db(db)
-    ensure_admin_account(db)
-
-
-def migrate_admin_role(db):
-    """Expand older databases without discarding any existing project data."""
-    table_sql = db.execute(
-        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
-    ).fetchone()["sql"]
-    if "'admin'" in table_sql:
-        return
-    db.commit()
-    db.executescript("""
-        PRAGMA foreign_keys = OFF;
-        BEGIN;
-        CREATE TABLE users_new (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          first_name TEXT NOT NULL, last_name TEXT NOT NULL,
-          email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
-          role TEXT NOT NULL CHECK(role IN ('guide','participant','admin')),
-          languages TEXT NOT NULL DEFAULT '[]'
-        );
-        INSERT INTO users_new SELECT * FROM users;
-        DROP TABLE users;
-        ALTER TABLE users_new RENAME TO users;
-        COMMIT;
-        PRAGMA foreign_keys = ON;
-    """)
-
-
-def ensure_admin_account(db):
-    """The optional Prova finale specification permits one administrator only."""
-    admin = db.execute("SELECT id FROM users WHERE role='admin'").fetchone()
-    if not admin:
-        db.execute(
-            """INSERT INTO users(first_name,last_name,email,password_hash,role,languages)
-               VALUES(?,?,?,?,?,?)""",
-            ("Platform", "Administrator", "admin@turkishdelight.test",
-             generate_password_hash("Admin2026!"), "admin", "[]"),
-        )
-        db.commit()
-
-
-def seed_db(db):
-    users = [
-        ("Işıl","Çakan","isil@turkishdelight.test","guide",["English","German"]),
-        ("Deniz","Sürür","deniz@turkishdelight.test","guide",["English","Italian"]),
-        ("İlker","Başar","ilker@turkishdelight.test","guide",["English","Spanish","German"]),
-        ("Nisan","Köse","nisan@turkishdelight.test","guide",["English","Italian"]),
-        ("Sofia","Rossi","sofia@example.test","participant",[]),
-        ("Lucas","Meyer","lucas@example.test","participant",[]),
-        ("Ines","Costa","ines@example.test","participant",[]),
-    ]
-    ids = []
-    for first,last,email,role,languages in users:
-        ids.append(db.execute("INSERT INTO users(first_name,last_name,email,password_hash,role,languages) VALUES(?,?,?,?,?,?)",
-                              (first,last,email,generate_password_hash("Delight2026!"),role,json.dumps(languages))).lastrowid)
-    tours = [
-        (ids[1],"Sweet İzmir","Empires Through Desserts","Explore İzmir through its famous sweets and discover how desserts became symbols of charity, memory, and celebration.","From Ottoman palace kitchens to neighbourhood lokma stands, İzmir’s sweets carry customs across generations.","In İzmir, desserts are not only food—they are acts of memory, charity and community.",["Şambali","Turkish Delight","Lokma"],["Kemeraltı Bazaar","Historical Şambali shop","Hisar Mosque","Konak Square","Traditional Lokma stand"],["Ottoman cuisine","Religious traditions","Why lokma is distributed during funerals and celebrations","Desserts as part of social life and community"],"Kemeraltı main gate",150,"English",12),
-        (ids[2],"Coffee and the Ottoman Empire","The Drink That Conquered Europe","Discover how Ottoman coffee culture transformed Europe and gave birth to modern cafés.","Follow the coffee bean from Ottoman trade routes and convivial hans to the café tables of Europe.","Without Ottoman coffeehouses, modern cafés in Europe might never have existed.",["Turkish Coffee","Optional Turkish Delight"],["Kızlarağası Han","Kemeraltı Bazaar","Hisar Mosque","Konak Square","İzmir Clock Tower"],["Ottoman trade routes","Coffee culture","Historical coffeehouses","The spread of coffee to Europe"],"Courtyard of Kızlarağası Han",120,"English",10),
-        (ids[0],"Wine and Ancient Greeks","The Taste of Ancient Smyrna","Travel back to Ancient Smyrna and experience the role of wine in Greek and Roman civilization.","At Smyrna’s ancient stones, learn how vines, ritual, and commerce connected the city to a Mediterranean world.","Wine connected Ancient Smyrna to the entire Mediterranean world.",["Grapes","Local cheeses","Aegean wines"],["Agora of Smyrna","Kadifekale","Ancient Theatre of Smyrna","Optional extension to Urla vineyards"],["Ancient Greeks","Dionysus","Trade with Rome","Wine culture of Ancient Smyrna"],"Agora visitor entrance",180,"German",8),
-        (ids[3],"The Boyoz Story","How Immigrants Shaped İzmir","Discover the story of the Sephardic Jews and how a pastry from Spain became one of İzmir's most iconic foods.","Trace a 500-year migration through synagogues, market lanes, and the layered folds of a beloved pastry.","You are eating a recipe that travelled from Spain over 500 years ago.",["Boyoz"],["Dostlar Fırını","Kemeraltı Bazaar","Havra Street","Synagogue District","Kızlarağası Han"],["Expulsion of Sephardic Jews from Spain","Arrival in the Ottoman Empire","Multicultural history of İzmir","Food and migration"],"Dostlar Fırını, Alsancak",135,"Italian",10),
-    ]
-    schedules = [[(1,"10:00"),(5,"10:30")],[(2,"14:00"),(6,"11:00")],[(4,"15:00"),(6,"15:00")],[(0,"09:30"),(5,"09:30")]]
-    tour_ids=[]
-    for t, sched in zip(tours,schedules):
-        cur=db.execute("""INSERT INTO tours(guide_id,title,subtitle,description,story,final_message,foods,stops,story_points,meeting_point,duration,language,capacity)
-                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",(t[0],t[1],t[2],t[3],t[4],t[5],json.dumps(t[6]),json.dumps(t[7]),json.dumps(t[8]),*t[9:]))
-        tour_ids.append(cur.lastrowid)
-        for weekday,start in sched: db.execute("INSERT INTO schedules VALUES(?,?,?)",(cur.lastrowid,weekday,start))
-    for participant_id,tour_id,days_ahead in [(ids[4],tour_ids[0],5),(ids[5],tour_ids[1],6),(ids[6],tour_ids[3],3)]:
-        weekday=db.execute("SELECT weekday FROM schedules WHERE tour_id=? ORDER BY weekday LIMIT 1",(tour_id,)).fetchone()[0]
-        d=date.today()+timedelta(days=days_ahead)
-        d += timedelta(days=(weekday-d.weekday())%7)
-        cur=db.execute("INSERT INTO reservations(participant_id,tour_id,tour_date,created_at) VALUES(?,?,?,?)",(participant_id,tour_id,d.isoformat(),datetime.now().isoformat()))
-        if participant_id==ids[4]: db.execute("INSERT INTO reservation_guests(reservation_id,name) VALUES(?,?)",(cur.lastrowid,"Marco Rossi"))
-    past_day = date.today() - timedelta(days=1)
-    past_weekday = db.execute("SELECT weekday FROM schedules WHERE tour_id=? ORDER BY weekday LIMIT 1", (tour_ids[0],)).fetchone()[0]
-    past_day -= timedelta(days=(past_day.weekday() - past_weekday) % 7)
-    db.execute("INSERT INTO reservations(participant_id,tour_id,tour_date,created_at) VALUES(?,?,?,?)",
-               (ids[5], tour_ids[0], past_day.isoformat(), datetime.now().isoformat()))
-    db.commit()
+    userdb.prepare_user_schema(db)
+    if not userdb.has_users(db):
+        user_ids = userdb.seed_sample_users(db)
+        tourdb.seed_sample_tours(db, user_ids, date.today(), datetime.now())
+    userdb.ensure_admin_account(db)
+    userdb.migrate_sample_password_hashes(db)
 
 
 with app.app_context():

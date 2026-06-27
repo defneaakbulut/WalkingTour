@@ -4,12 +4,22 @@
 
 {% block content %}
   <section class="admin-page">
+    <img
+      class="admin-decoration admin-decoration-left"
+      src="{{ url_for('static', filename='decoration2.png') }}"
+      alt=""
+      aria-hidden="true"
+    >
+    <img
+      class="admin-decoration admin-decoration-right"
+      src="{{ url_for('static', filename='decoration2.png') }}"
+      alt=""
+      aria-hidden="true"
+    >
     <header class="admin-heading">
       <div>
-        <p class="eyebrow">Platform administration</p>
         <h1>Turkish Delight<br><em>at a glance.</em></h1>
       </div>
-      <p>Read-only oversight of registered guides, their tours, and platform activity.</p>
     </header>
 
     <section class="admin-stats" aria-label="Platform statistics">
@@ -33,7 +43,6 @@
 
     <section class="admin-language-stats">
       <div>
-        <p class="eyebrow">Reservations by language</p>
         <h2>Language<br><em>overview.</em></h2>
       </div>
       <div class="language-bars">
@@ -52,7 +61,6 @@
 
     <section class="admin-guides">
       <div class="admin-section-title">
-        <p class="eyebrow">Registered guide directory</p>
         <h2>Guides and<br><em>their tours.</em></h2>
       </div>
       {% for guide in guides %}

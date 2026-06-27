@@ -3,44 +3,82 @@
 {% block title %}{{ tour.title }} — Turkish Delight{% endblock %}
 
 {% block content %}
-  <section class="detail-hero">
-    <img src="{{ url_for('static', filename=tour.images[0]) }}" alt="{{ tour.title }}">
-    <div class="detail-shade"></div>
-    <div class="detail-title">
-      <a href="{{ url_for('home') }}#tours">← All tours</a>
-      <p class="eyebrow light">{{ tour.subtitle }}</p>
-      <h1>{{ tour.title }}</h1>
-      <p>{{ tour.description }}</p>
-    </div>
+  <section class="tour-title-section">
+    <p class="eyebrow">{{ tour.subtitle }}</p>
+    <h1>{{ tour.title }}</h1>
+    <p>{{ tour.description }}</p>
   </section>
-  <section class="detail-bar">
-    <span>
-      <small>Duration</small>
-      {{ tour.duration // 60 }} hr
-      {% if tour.duration % 60 %}{{ tour.duration % 60 }} min{% endif %}
-    </span>
-    <span><small>Language</small>{{ tour.language }}</span>
-    <span><small>Group</small>Up to {{ tour.capacity }}</span>
-    <span><small>Meeting point</small>{{ tour.meeting_point }}</span>
-  </section>
-  <section class="section detail-layout">
-    <div class="detail-main">
-      <p class="eyebrow">The story</p>
-      <h2>Walk into the<br><em>past.</em></h2>
+
+  <section class="section tour-overview">
+    <div class="tour-overview-copy">
+      <p class="eyebrow">The experience</p>
       <p class="lead">{{ tour.story }}</p>
-      <div class="highlight-list">
-        {% for point in tour.story_points %}
-          <p><span>0{{ loop.index }}</span>{{ point }}</p>
+      <div class="detail-bar">
+        <span>
+          <small>Duration</small>
+          {{ tour.duration // 60 }} hr
+          {% if tour.duration % 60 %}{{ tour.duration % 60 }} min{% endif %}
+        </span>
+        <span><small>Maximum group</small>{{ tour.capacity }} people</span>
+        <span><small>Language</small>{{ tour.language }}</span>
+      </div>
+    </div>
+
+    <aside class="journey-info overview-info">
+      <div>
+        <p class="eyebrow">Meeting point</p>
+        <h3>{{ tour.meeting_point }}</h3>
+      </div>
+      <div>
+        <p class="eyebrow">Stories along the way</p>
+        <ul>
+          {% for point in tour.story_points %}
+            <li>{{ point }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <section class="tour-gallery section" aria-label="{{ tour.title }} photo gallery">
+    {% for image in tour.images %}
+      <img
+        src="{{ url_for('static', filename=image) }}"
+        alt="{{ tour.title }} tour, photograph {{ loop.index }}"
+        loading="lazy"
+      >
+    {% endfor %}
+  </section>
+
+  <section class="section journey-section">
+    <div class="journey-main">
+      <p class="eyebrow">Step by step</p>
+      <h2>The journey</h2>
+      <div class="journey-list">
+        {% for stop in tour.stops %}
+          <article class="journey-stop">
+            <span>{{ loop.index }}</span>
+            <div>
+              <h3>{{ stop }}</h3>
+              {% if loop.index0 < tour.story_points|length %}
+                <p>{{ tour.story_points[loop.index0] }}</p>
+              {% endif %}
+            </div>
+          </article>
         {% endfor %}
       </div>
     </div>
+
     <aside class="booking-card">
       <a class="guide" href="{{ url_for('guide_detail', guide_id=tour.guide_id) }}">
         <img
           src="{{ url_for('static', filename=tour.guide_image) }}"
           alt="{{ tour.guide_name }}, your tour guide"
         >
-        <div><small>Your local guide</small><strong>{{ tour.guide_name }}</strong></div>
+        <div>
+          <small>Guided by</small>
+          <strong>{{ tour.guide_name }}</strong>
+        </div>
       </a>
       <h3>Reserve your place</h3>
       <p>Free to book. Tip your guide what the walk was worth afterward.</p>
@@ -48,7 +86,7 @@
         <form action="{{ url_for('book_tour', tour_id=tour.id) }}" method="post" data-booking-form>
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <label>
-            Choose a date
+            Weekly availability
             <select name="tour_date" required>
               <option value="">Select an occurrence</option>
               {% for item in occurrences %}
@@ -60,40 +98,26 @@
           </label>
           <div data-guests></div>
           <button class="add-guest" type="button" data-add-guest>+ Add another person</button>
-          <button class="button button-dark button-full" type="submit">Book this walk</button>
+          <button class="button button-dark button-full" type="submit">Reserve your spot</button>
         </form>
       {% elif current_user.is_authenticated %}
         <p class="role-note">Guide and administrator accounts cannot make participant reservations.</p>
       {% else %}
-        <a class="button button-dark button-full" href="{{ url_for('login', next=request.path) }}">Log in to book</a>
+        <a class="button button-dark button-full" href="{{ url_for('login', next=request.path) }}">
+          Log in to reserve
+        </a>
         <p class="booking-new">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
       {% endif %}
     </aside>
   </section>
-  <section class="taste-section">
+
+  <section class="taste-section tour-tastes">
     <div>
       <p class="eyebrow light">Along the way</p>
-      <h2>What you’ll<br><em>taste.</em></h2>
-      <div class="taste-list">
-        {% for food in tour.foods %}<span>{{ food }}</span>{% endfor %}
-      </div>
+      <h2>What you’ll <em>taste.</em></h2>
     </div>
-    <div>
-      <p class="eyebrow light">The route</p>
-      <ol class="stops">
-        {% for stop in tour.stops %}
-          <li><span>{{ '%02d'|format(loop.index) }}</span>{{ stop }}</li>
-        {% endfor %}
-      </ol>
+    <div class="taste-list">
+      {% for food in tour.foods %}<span>{{ food }}</span>{% endfor %}
     </div>
-  </section>
-  <section class="tour-gallery section">
-    {% for image in tour.images %}
-      <img
-        src="{{ url_for('static', filename=image) }}"
-        alt="{{ tour.title }} tour, photograph {{ loop.index }}"
-        loading="lazy"
-      >
-    {% endfor %}
   </section>
 {% endblock %}

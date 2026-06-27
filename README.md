@@ -2,6 +2,14 @@
 
 A responsive Flask + SQLite platform for food-led free walking tours in İzmir.
 
+## Code structure
+
+- `app.py` — Flask routes, form validation, and application setup
+- `user.py` — authenticated `User` model
+- `userdb.py` — user queries, registration, roles, and administrator setup
+- `tourdb.py` — tour, schedule, reservation, and reporting queries
+- `schema.sql` — SQLite table definitions
+
 ## Run locally
 
 ```bash
