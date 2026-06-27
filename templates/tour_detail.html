@@ -7,7 +7,7 @@
     <img src="{{ url_for('static', filename=tour.images[0]) }}" alt="{{ tour.title }}">
     <div class="detail-shade"></div>
     <div class="detail-title">
-      <a href="{{ url_for('tours') }}">← All tours</a>
+      <a href="{{ url_for('home') }}#tours">← All tours</a>
       <p class="eyebrow light">{{ tour.subtitle }}</p>
       <h1>{{ tour.title }}</h1>
       <p>{{ tour.description }}</p>
@@ -35,13 +35,13 @@
       </div>
     </div>
     <aside class="booking-card">
-      <div class="guide">
+      <a class="guide" href="{{ url_for('guide_detail', guide_id=tour.guide_id) }}">
         <img
           src="{{ url_for('static', filename=tour.guide_image) }}"
           alt="{{ tour.guide_name }}, your tour guide"
         >
         <div><small>Your local guide</small><strong>{{ tour.guide_name }}</strong></div>
-      </div>
+      </a>
       <h3>Reserve your place</h3>
       <p>Free to book. Tip your guide what the walk was worth afterward.</p>
       {% if current_user.is_authenticated and current_user.role == 'participant' %}
@@ -95,10 +95,5 @@
         loading="lazy"
       >
     {% endfor %}
-  </section>
-  <section class="final-message">
-    <span>✦</span>
-    <blockquote>“{{ tour.final_message }}”</blockquote>
-    <a class="button" href="#main">Reserve your place</a>
   </section>
 {% endblock %}

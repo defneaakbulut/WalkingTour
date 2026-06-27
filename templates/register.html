@@ -8,7 +8,6 @@
       <img src="{{ url_for('static', filename='Tour1_4.jpg') }}" alt="Sweets shared in İzmir">
     </div>
     <div class="auth-panel">
-      <p class="eyebrow">Join the table</p>
       <h1>Create your<br><em>account.</em></h1>
       <form method="post" class="stack-form" data-register>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -33,8 +32,14 @@
         <fieldset>
           <legend>I want to</legend>
           <div class="role-options">
-            <label><input type="radio" name="role" value="participant" checked> Join tours</label>
-            <label><input type="radio" name="role" value="guide"> Lead tours</label>
+            <label>
+              <input type="radio" name="role" value="participant" checked>
+              <span>Join Tours</span>
+            </label>
+            <label>
+              <input type="radio" name="role" value="guide">
+              <span>Lead Tours</span>
+            </label>
           </div>
         </fieldset>
         <fieldset class="languages" data-languages hidden>

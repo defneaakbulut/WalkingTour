@@ -138,15 +138,6 @@ def next_occurrences(tour_id, limit=10):
 
 @app.route("/")
 def home():
-    rows = get_db().execute(
-        """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
-           FROM tours t JOIN users u ON u.id = t.guide_id ORDER BY t.id"""
-    ).fetchall()
-    return render_template("home.html", tours=[tour_from_row(row) for row in rows])
-
-
-@app.route("/tours")
-def tours():
     query = """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
                FROM tours t JOIN users u ON u.id = t.guide_id WHERE 1=1"""
     params = []
@@ -168,13 +159,13 @@ def tours():
             flash("Please choose a valid date.", "error")
     rows = get_db().execute(query + " ORDER BY t.id", params).fetchall()
     tours = [tour_from_row(row) for row in rows]
-    return render_template("tours.html", tours=tours, languages=LANGUAGES,
+    return render_template("home.html", tours=tours, languages=LANGUAGES,
                            today=date.today().isoformat())
 
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+@app.route("/tours")
+def tours():
+    return redirect(url_for("home", **request.args) + "#tours")
 
 
 @app.route("/guides")
@@ -204,6 +195,27 @@ def guides():
     return render_template("guides.html", guides=guide_list)
 
 
+@app.route("/guides/<int:guide_id>")
+def guide_detail(guide_id):
+    row = get_db().execute(
+        "SELECT * FROM users WHERE id=? AND role='guide'", (guide_id,)
+    ).fetchone()
+    if not row:
+        abort(404)
+    guide = User(row)
+    tour_rows = get_db().execute(
+        "SELECT * FROM tours WHERE guide_id=? ORDER BY id", (guide_id,)
+    ).fetchall()
+    guide_tours = [tour_from_row(tour) for tour in tour_rows]
+    image = "Homepage.jpg"
+    for tour in guide_tours:
+        candidate = BASE_DIR / "static" / f"Guide{tour['id']}.jpg"
+        if candidate.exists():
+            image = candidate.name
+            break
+    return render_template("guide_detail.html", guide=guide, tours=guide_tours, image=image)
+
+
 @app.route("/tour/<int:tour_id>")
 def tour_detail(tour_id):
     row = get_db().execute(
@@ -229,7 +241,7 @@ def register():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         role = request.form.get("role", "")
-        languages = [x for x in request.form.getlist("languages") if x in LANGUAGES]
+        languages = [x for x in request.form.getlist("languages") if x in LANGUAGES] if role == "guide" else []
         errors = []
         if not first or not last: errors.append("First and last name are required.")
         if "@" not in email: errors.append("Enter a valid email address.")
@@ -565,23 +577,6 @@ def submit_report(tour_id):
     db.commit()
     flash("Post-tour report saved.", "success")
     return redirect(url_for("profile"))
-
-
-@app.route("/contact", methods=["GET", "POST"])
-def contact():
-    if request.method == "GET":
-        return render_template("contact.html")
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip().lower()
-    message = request.form.get("message", "").strip()
-    if not name or "@" not in email or len(message) < 10:
-        flash("Please complete your name, email, and a message of at least 10 characters.", "error")
-    else:
-        get_db().execute("INSERT INTO contact_messages(name,email,message,created_at) VALUES(?,?,?,?)",
-                         (name,email,message,datetime.now().isoformat(timespec="seconds")))
-        get_db().commit()
-        flash("Thank you — we’ll be in touch soon.", "success")
-    return redirect(url_for("contact"))
 
 
 @app.errorhandler(404)

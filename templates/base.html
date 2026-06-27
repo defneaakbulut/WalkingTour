@@ -16,7 +16,7 @@
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <header class="site-header" data-header>
+    <header class="site-header{% if request.endpoint == 'home' %} site-header-overlay{% endif %}" data-header>
       <a class="brand" href="{{ url_for('home') }}" aria-label="Turkish Delight home">
         <span>Turkish Delight</span>
       </a>
@@ -31,10 +31,8 @@
         <span></span>
       </button>
       <nav id="site-nav" class="site-nav" aria-label="Main navigation" data-nav>
-        <a href="{{ url_for('tours') }}">Tours</a>
+        <a href="{{ url_for('home') }}#tours">Tours</a>
         <a href="{{ url_for('guides') }}">Guides</a>
-        <a href="{{ url_for('about') }}">Our story</a>
-        <a href="{{ url_for('contact') }}">Contact</a>
         {% if current_user.is_authenticated %}
           {% if current_user.role == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}">Administration</a>
@@ -71,13 +69,7 @@
         <a class="footer-brand" href="{{ url_for('home') }}">Turkish Delight</a>
         <p>Experience the Sweet Side of Turkey</p>
       </div>
-      <div class="footer-links">
-        <a href="{{ url_for('tours') }}">Tours</a>
-        <a href="{{ url_for('guides') }}">Guides</a>
-        <a href="{{ url_for('about') }}">Our story</a>
-        <a href="{{ url_for('contact') }}">Contact</a>
-      </div>
-      <p class="copyright">© 2026 Turkish Delight. Made with care in İzmir.</p>
+      <p class="copyright">© 2026 Turkish Delight. Made with love in İzmir.</p>
     </footer>
   </body>
 </html>
