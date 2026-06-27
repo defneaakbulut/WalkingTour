@@ -1,10 +1,48 @@
 {% extends "base.html" %}
+
 {% block title %}Guides — Turkish Delight{% endblock %}
+
 {% block content %}
-<section class="page-hero guides-page-hero"><p class="eyebrow">The people behind the stories</p><h1>Meet your local<br><em>guides.</em></h1><p>Historians, food lovers, and devoted İzmir storytellers ready to share the city they call home.</p></section>
-<section class="section guides-grid">
-  {% for guide in guides %}
-  <article class="guide-profile"><div class="guide-profile-image"><img src="{{ url_for('static', filename=guide.image) }}" alt="{{ guide.user.full_name }}, Turkish Delight guide"><span>{{ '%02d'|format(loop.index) }}</span></div><div class="guide-profile-copy"><p class="eyebrow">Local guide</p><h2>{{ guide.user.full_name }}</h2><p class="guide-languages">Speaks {{ guide.user.languages|join(' · ') }}</p><p>Ask about the hidden corners and flavours that make İzmir unforgettable.</p>{% if guide.tours %}<h3>Tours with {{ guide.user.first_name }}</h3><ul>{% for tour in guide.tours %}<li><a href="{{ url_for('tour_detail', tour_id=tour.id) }}"><span>{{ tour.title }}</span><small>{{ tour.subtitle }}</small><b>→</b></a></li>{% endfor %}</ul>{% else %}<p>New walking stories coming soon.</p>{% endif %}</div></article>
-  {% else %}<div class="empty-state"><h2>Our next storytellers are on their way.</h2></div>{% endfor %}
-</section>
+  <section class="page-hero guides-page-hero">
+    <p class="eyebrow">The people behind the stories</p>
+    <h1>Meet your local<br><em>guides.</em></h1>
+    <p>Historians, food lovers, and devoted İzmir storytellers ready to share the city they call home.</p>
+  </section>
+  <section class="section guides-grid">
+    {% for guide in guides %}
+      <article class="guide-profile">
+        <div class="guide-profile-image">
+          <img
+            src="{{ url_for('static', filename=guide.image) }}"
+            alt="{{ guide.user.full_name }}, Turkish Delight guide"
+          >
+          <span>{{ '%02d'|format(loop.index) }}</span>
+        </div>
+        <div class="guide-profile-copy">
+          <p class="eyebrow">Local guide</p>
+          <h2>{{ guide.user.full_name }}</h2>
+          <p class="guide-languages">Speaks {{ guide.user.languages|join(' · ') }}</p>
+          <p>Ask about the hidden corners and flavours that make İzmir unforgettable.</p>
+          {% if guide.tours %}
+            <h3>Tours with {{ guide.user.first_name }}</h3>
+            <ul>
+              {% for tour in guide.tours %}
+                <li>
+                  <a href="{{ url_for('tour_detail', tour_id=tour.id) }}">
+                    <span>{{ tour.title }}</span>
+                    <small>{{ tour.subtitle }}</small>
+                    <b>→</b>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>New walking stories coming soon.</p>
+          {% endif %}
+        </div>
+      </article>
+    {% else %}
+      <div class="empty-state"><h2>Our next storytellers are on their way.</h2></div>
+    {% endfor %}
+  </section>
 {% endblock %}

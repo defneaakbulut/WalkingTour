@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Administration — Turkish Delight{% endblock %}
+
+{% block content %}
+  <section class="admin-page">
+    <header class="admin-heading">
+      <div>
+        <p class="eyebrow">Platform administration</p>
+        <h1>Turkish Delight<br><em>at a glance.</em></h1>
+      </div>
+      <p>Read-only oversight of registered guides, their tours, and platform activity.</p>
+    </header>
+
+    <section class="admin-stats" aria-label="Platform statistics">
+      <article>
+        <span>Registered guides</span>
+        <strong>{{ statistics.guides }}</strong>
+      </article>
+      <article>
+        <span>Participants</span>
+        <strong>{{ statistics.participants }}</strong>
+      </article>
+      <article>
+        <span>Published tours</span>
+        <strong>{{ statistics.tours }}</strong>
+      </article>
+      <article>
+        <span>Reservations</span>
+        <strong>{{ statistics.reservations }}</strong>
+      </article>
+    </section>
+
+    <section class="admin-language-stats">
+      <div>
+        <p class="eyebrow">Reservations by language</p>
+        <h2>Language<br><em>overview.</em></h2>
+      </div>
+      <div class="language-bars">
+        {% if reservations_by_language %}
+          {% for item in reservations_by_language %}
+            <div class="language-stat">
+              <span>{{ item.language }}</span>
+              <strong>{{ item.total }} reservation{{ '' if item.total == 1 else 's' }}</strong>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>No tour languages available.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="admin-guides">
+      <div class="admin-section-title">
+        <p class="eyebrow">Registered guide directory</p>
+        <h2>Guides and<br><em>their tours.</em></h2>
+      </div>
+      {% for guide in guides %}
+        <article class="admin-guide">
+          <header>
+            <span>{{ '%02d'|format(loop.index) }}</span>
+            <div>
+              <h3>{{ guide.user.full_name }}</h3>
+              <a href="mailto:{{ guide.user.email }}">{{ guide.user.email }}</a>
+            </div>
+            <p><small>Spoken languages</small>{{ guide.user.languages|join(' · ') }}</p>
+            <strong>{{ guide.tours|length }} tour{{ '' if guide.tours|length == 1 else 's' }}</strong>
+          </header>
+          <div class="admin-tour-list">
+            {% for tour in guide.tours %}
+              <details class="admin-tour">
+                <summary>
+                  <span>
+                    <small>{{ tour.language }} · {{ tour.duration }} minutes</small>
+                    {{ tour.title }} — {{ tour.subtitle }}
+                  </span>
+                  <b>View details</b>
+                </summary>
+                <div class="admin-tour-detail">
+                  <div class="admin-tour-copy">
+                    <p>{{ tour.description }}</p>
+                    <dl>
+                      <div>
+                        <dt>Meeting point</dt>
+                        <dd>{{ tour.meeting_point }}</dd>
+                      </div>
+                      <div>
+                        <dt>Maximum participants</dt>
+                        <dd>{{ tour.capacity }}</dd>
+                      </div>
+                      <div>
+                        <dt>Reservations</dt>
+                        <dd>{{ tour.reservation_count }}</dd>
+                      </div>
+                      <div>
+                        <dt>Weekly schedule</dt>
+                        <dd>
+                          {% for schedule in tour.schedules %}
+                            {{ weekdays[schedule.weekday] }} {{ schedule.start_time }}{% if not loop.last %}<br>{% endif %}
+                          {% endfor %}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div class="admin-lists">
+                      <div>
+                        <h4>Foods</h4>
+                        <ul>
+                          {% for food in tour.foods %}<li>{{ food }}</li>{% endfor %}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4>Stops</h4>
+                        <ol>
+                          {% for stop in tour.stops %}<li>{{ stop }}</li>{% endfor %}
+                        </ol>
+                      </div>
+                    </div>
+                    <h4>Story highlights</h4>
+                    <ul>
+                      {% for point in tour.story_points %}<li>{{ point }}</li>{% endfor %}
+                    </ul>
+                    <blockquote>“{{ tour.final_message }}”</blockquote>
+                    <a class="text-link" href="{{ url_for('tour_detail', tour_id=tour.id) }}">
+                      Open public tour page →
+                    </a>
+                  </div>
+                  <div class="admin-tour-photos">
+                    {% for image in tour.images %}
+                      <img
+                        src="{{ url_for('static', filename=image) }}"
+                        alt="{{ tour.title }} promotional photograph {{ loop.index }}"
+                        loading="lazy"
+                      >
+                    {% endfor %}
+                  </div>
+                </div>
+              </details>
+            {% else %}
+              <p class="admin-no-tours">This guide has not published a tour yet.</p>
+            {% endfor %}
+          </div>
+        </article>
+      {% else %}
+        <div class="empty-state"><h3>No registered guides.</h3></div>
+      {% endfor %}
+    </section>
+  </section>
+{% endblock %}

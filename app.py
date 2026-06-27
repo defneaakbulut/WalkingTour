@@ -177,19 +177,16 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/gallery")
-def gallery():
-    images = sorted(
-        p.name for p in (BASE_DIR / "static").iterdir()
-        if p.is_file() and p.name.startswith(("Tour", "Guide"))
-    )
-    return render_template("gallery.html", gallery=images)
-
-
 @app.route("/guides")
 def guides():
     rows = get_db().execute(
-        "SELECT * FROM users WHERE role = 'guide' ORDER BY first_name, last_name"
+        """SELECT * FROM users WHERE role = 'guide'
+           ORDER BY CASE email
+             WHEN 'isil@turkishdelight.test' THEN 1
+             WHEN 'deniz@turkishdelight.test' THEN 2
+             WHEN 'ilker@turkishdelight.test' THEN 3
+             WHEN 'nisan@turkishdelight.test' THEN 4
+             ELSE 5 END, id"""
     ).fetchall()
     guide_list = []
     for row in rows:
@@ -281,6 +278,8 @@ def logout():
 @login_required
 def profile():
     db = get_db()
+    if current_user.role == "admin":
+        return redirect(url_for("admin_dashboard"))
     if current_user.role == "participant":
         reservations = db.execute(
             """SELECT r.*, t.title, t.meeting_point, t.duration,
@@ -322,6 +321,48 @@ def profile():
         ).fetchall()
         summaries.append(item)
     return render_template("guide_profile.html", tours=summaries)
+
+
+@app.route("/admin")
+@role_required("admin")
+def admin_dashboard():
+    db = get_db()
+    statistics = {
+        "guides": db.execute("SELECT COUNT(*) FROM users WHERE role='guide'").fetchone()[0],
+        "participants": db.execute("SELECT COUNT(*) FROM users WHERE role='participant'").fetchone()[0],
+        "tours": db.execute("SELECT COUNT(*) FROM tours").fetchone()[0],
+        "reservations": db.execute("SELECT COUNT(*) FROM reservations").fetchone()[0],
+    }
+    reservations_by_language = db.execute(
+        """SELECT t.language, COUNT(r.id) AS total
+           FROM tours t LEFT JOIN reservations r ON r.tour_id=t.id
+           GROUP BY t.language ORDER BY total DESC, t.language"""
+    ).fetchall()
+    guide_rows = db.execute(
+        "SELECT * FROM users WHERE role='guide' ORDER BY last_name, first_name"
+    ).fetchall()
+    guides = []
+    for guide_row in guide_rows:
+        guide = User(guide_row)
+        tour_rows = db.execute(
+            "SELECT * FROM tours WHERE guide_id=? ORDER BY title", (guide.id,)
+        ).fetchall()
+        detailed_tours = []
+        for tour_row in tour_rows:
+            tour = tour_from_row(tour_row)
+            tour["schedules"] = db.execute(
+                "SELECT weekday,start_time FROM schedules WHERE tour_id=? ORDER BY weekday",
+                (tour["id"],),
+            ).fetchall()
+            tour["reservation_count"] = db.execute(
+                "SELECT COUNT(*) FROM reservations WHERE tour_id=?", (tour["id"],)
+            ).fetchone()[0]
+            detailed_tours.append(tour)
+        guides.append({"user": guide, "tours": detailed_tours})
+    return render_template(
+        "admin_dashboard.html", statistics=statistics,
+        reservations_by_language=reservations_by_language, guides=guides,
+    )
 
 
 @app.route("/tour/<int:tour_id>/book", methods=["POST"])
@@ -554,14 +595,58 @@ def forbidden(_error): return render_template("error.html", code=403, message="T
 def init_db():
     db = get_db()
     db.executescript((BASE_DIR / "schema.sql").read_text())
+    migrate_admin_role(db)
+    db.execute("CREATE UNIQUE INDEX IF NOT EXISTS one_platform_admin ON users(role) WHERE role='admin'")
     if not db.execute("SELECT 1 FROM users").fetchone():
         seed_db(db)
+    ensure_admin_account(db)
+
+
+def migrate_admin_role(db):
+    """Expand older databases without discarding any existing project data."""
+    table_sql = db.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()["sql"]
+    if "'admin'" in table_sql:
+        return
+    db.commit()
+    db.executescript("""
+        PRAGMA foreign_keys = OFF;
+        BEGIN;
+        CREATE TABLE users_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          first_name TEXT NOT NULL, last_name TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('guide','participant','admin')),
+          languages TEXT NOT NULL DEFAULT '[]'
+        );
+        INSERT INTO users_new SELECT * FROM users;
+        DROP TABLE users;
+        ALTER TABLE users_new RENAME TO users;
+        COMMIT;
+        PRAGMA foreign_keys = ON;
+    """)
+
+
+def ensure_admin_account(db):
+    """The optional Prova finale specification permits one administrator only."""
+    admin = db.execute("SELECT id FROM users WHERE role='admin'").fetchone()
+    if not admin:
+        db.execute(
+            """INSERT INTO users(first_name,last_name,email,password_hash,role,languages)
+               VALUES(?,?,?,?,?,?)""",
+            ("Platform", "Administrator", "admin@turkishdelight.test",
+             generate_password_hash("Admin2026!"), "admin", "[]"),
+        )
+        db.commit()
 
 
 def seed_db(db):
     users = [
-        ("Elif","Aydın","elif@turkishdelight.test","guide",["English","Italian"]),
-        ("Mert","Kaya","mert@turkishdelight.test","guide",["English","Spanish","German"]),
+        ("Işıl","Çakan","isil@turkishdelight.test","guide",["English","German"]),
+        ("Deniz","Sürür","deniz@turkishdelight.test","guide",["English","Italian"]),
+        ("İlker","Başar","ilker@turkishdelight.test","guide",["English","Spanish","German"]),
+        ("Nisan","Köse","nisan@turkishdelight.test","guide",["English","Italian"]),
         ("Sofia","Rossi","sofia@example.test","participant",[]),
         ("Lucas","Meyer","lucas@example.test","participant",[]),
         ("Ines","Costa","ines@example.test","participant",[]),
@@ -571,10 +656,10 @@ def seed_db(db):
         ids.append(db.execute("INSERT INTO users(first_name,last_name,email,password_hash,role,languages) VALUES(?,?,?,?,?,?)",
                               (first,last,email,generate_password_hash("Delight2026!"),role,json.dumps(languages))).lastrowid)
     tours = [
-        (ids[0],"Sweet İzmir","Empires Through Desserts","Explore İzmir through its famous sweets and discover how desserts became symbols of charity, memory, and celebration.","From Ottoman palace kitchens to neighbourhood lokma stands, İzmir’s sweets carry customs across generations.","In İzmir, desserts are not only food—they are acts of memory, charity and community.",["Şambali","Turkish Delight","Lokma"],["Kemeraltı Bazaar","Historical Şambali shop","Hisar Mosque","Konak Square","Traditional Lokma stand"],["Ottoman cuisine","Religious traditions","Why lokma is distributed during funerals and celebrations","Desserts as part of social life and community"],"Kemeraltı main gate",150,"English",12),
-        (ids[1],"Coffee and the Ottoman Empire","The Drink That Conquered Europe","Discover how Ottoman coffee culture transformed Europe and gave birth to modern cafés.","Follow the coffee bean from Ottoman trade routes and convivial hans to the café tables of Europe.","Without Ottoman coffeehouses, modern cafés in Europe might never have existed.",["Turkish Coffee","Optional Turkish Delight"],["Kızlarağası Han","Kemeraltı Bazaar","Hisar Mosque","Konak Square","İzmir Clock Tower"],["Ottoman trade routes","Coffee culture","Historical coffeehouses","The spread of coffee to Europe"],"Courtyard of Kızlarağası Han",120,"English",10),
-        (ids[1],"Wine and Ancient Greeks","The Taste of Ancient Smyrna","Travel back to Ancient Smyrna and experience the role of wine in Greek and Roman civilization.","At Smyrna’s ancient stones, learn how vines, ritual, and commerce connected the city to a Mediterranean world.","Wine connected Ancient Smyrna to the entire Mediterranean world.",["Grapes","Local cheeses","Aegean wines"],["Agora of Smyrna","Kadifekale","Ancient Theatre of Smyrna","Optional extension to Urla vineyards"],["Ancient Greeks","Dionysus","Trade with Rome","Wine culture of Ancient Smyrna"],"Agora visitor entrance",180,"German",8),
-        (ids[0],"The Boyoz Story","How Immigrants Shaped İzmir","Discover the story of the Sephardic Jews and how a pastry from Spain became one of İzmir's most iconic foods.","Trace a 500-year migration through synagogues, market lanes, and the layered folds of a beloved pastry.","You are eating a recipe that travelled from Spain over 500 years ago.",["Boyoz"],["Dostlar Fırını","Kemeraltı Bazaar","Havra Street","Synagogue District","Kızlarağası Han"],["Expulsion of Sephardic Jews from Spain","Arrival in the Ottoman Empire","Multicultural history of İzmir","Food and migration"],"Dostlar Fırını, Alsancak",135,"Italian",10),
+        (ids[1],"Sweet İzmir","Empires Through Desserts","Explore İzmir through its famous sweets and discover how desserts became symbols of charity, memory, and celebration.","From Ottoman palace kitchens to neighbourhood lokma stands, İzmir’s sweets carry customs across generations.","In İzmir, desserts are not only food—they are acts of memory, charity and community.",["Şambali","Turkish Delight","Lokma"],["Kemeraltı Bazaar","Historical Şambali shop","Hisar Mosque","Konak Square","Traditional Lokma stand"],["Ottoman cuisine","Religious traditions","Why lokma is distributed during funerals and celebrations","Desserts as part of social life and community"],"Kemeraltı main gate",150,"English",12),
+        (ids[2],"Coffee and the Ottoman Empire","The Drink That Conquered Europe","Discover how Ottoman coffee culture transformed Europe and gave birth to modern cafés.","Follow the coffee bean from Ottoman trade routes and convivial hans to the café tables of Europe.","Without Ottoman coffeehouses, modern cafés in Europe might never have existed.",["Turkish Coffee","Optional Turkish Delight"],["Kızlarağası Han","Kemeraltı Bazaar","Hisar Mosque","Konak Square","İzmir Clock Tower"],["Ottoman trade routes","Coffee culture","Historical coffeehouses","The spread of coffee to Europe"],"Courtyard of Kızlarağası Han",120,"English",10),
+        (ids[0],"Wine and Ancient Greeks","The Taste of Ancient Smyrna","Travel back to Ancient Smyrna and experience the role of wine in Greek and Roman civilization.","At Smyrna’s ancient stones, learn how vines, ritual, and commerce connected the city to a Mediterranean world.","Wine connected Ancient Smyrna to the entire Mediterranean world.",["Grapes","Local cheeses","Aegean wines"],["Agora of Smyrna","Kadifekale","Ancient Theatre of Smyrna","Optional extension to Urla vineyards"],["Ancient Greeks","Dionysus","Trade with Rome","Wine culture of Ancient Smyrna"],"Agora visitor entrance",180,"German",8),
+        (ids[3],"The Boyoz Story","How Immigrants Shaped İzmir","Discover the story of the Sephardic Jews and how a pastry from Spain became one of İzmir's most iconic foods.","Trace a 500-year migration through synagogues, market lanes, and the layered folds of a beloved pastry.","You are eating a recipe that travelled from Spain over 500 years ago.",["Boyoz"],["Dostlar Fırını","Kemeraltı Bazaar","Havra Street","Synagogue District","Kızlarağası Han"],["Expulsion of Sephardic Jews from Spain","Arrival in the Ottoman Empire","Multicultural history of İzmir","Food and migration"],"Dostlar Fırını, Alsancak",135,"Italian",10),
     ]
     schedules = [[(1,"10:00"),(5,"10:30")],[(2,"14:00"),(6,"11:00")],[(4,"15:00"),(6,"15:00")],[(0,"09:30"),(5,"09:30")]]
     tour_ids=[]
@@ -583,17 +668,17 @@ def seed_db(db):
                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",(t[0],t[1],t[2],t[3],t[4],t[5],json.dumps(t[6]),json.dumps(t[7]),json.dumps(t[8]),*t[9:]))
         tour_ids.append(cur.lastrowid)
         for weekday,start in sched: db.execute("INSERT INTO schedules VALUES(?,?,?)",(cur.lastrowid,weekday,start))
-    for participant_id,tour_id,days_ahead in [(ids[2],tour_ids[0],5),(ids[3],tour_ids[1],6),(ids[4],tour_ids[3],3)]:
+    for participant_id,tour_id,days_ahead in [(ids[4],tour_ids[0],5),(ids[5],tour_ids[1],6),(ids[6],tour_ids[3],3)]:
         weekday=db.execute("SELECT weekday FROM schedules WHERE tour_id=? ORDER BY weekday LIMIT 1",(tour_id,)).fetchone()[0]
         d=date.today()+timedelta(days=days_ahead)
         d += timedelta(days=(weekday-d.weekday())%7)
         cur=db.execute("INSERT INTO reservations(participant_id,tour_id,tour_date,created_at) VALUES(?,?,?,?)",(participant_id,tour_id,d.isoformat(),datetime.now().isoformat()))
-        if participant_id==ids[2]: db.execute("INSERT INTO reservation_guests(reservation_id,name) VALUES(?,?)",(cur.lastrowid,"Marco Rossi"))
+        if participant_id==ids[4]: db.execute("INSERT INTO reservation_guests(reservation_id,name) VALUES(?,?)",(cur.lastrowid,"Marco Rossi"))
     past_day = date.today() - timedelta(days=1)
     past_weekday = db.execute("SELECT weekday FROM schedules WHERE tour_id=? ORDER BY weekday LIMIT 1", (tour_ids[0],)).fetchone()[0]
     past_day -= timedelta(days=(past_day.weekday() - past_weekday) % 7)
     db.execute("INSERT INTO reservations(participant_id,tour_id,tour_date,created_at) VALUES(?,?,?,?)",
-               (ids[3], tour_ids[0], past_day.isoformat(), datetime.now().isoformat()))
+               (ids[5], tour_ids[0], past_day.isoformat(), datetime.now().isoformat()))
     db.commit()
 
 

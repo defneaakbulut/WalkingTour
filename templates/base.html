@@ -1,49 +1,83 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Food-led free walking tours through the stories of İzmir.">
-  <title>{% block title %}Turkish Delight{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
-</head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header" data-header>
-    <a class="brand" href="{{ url_for('home') }}" aria-label="Turkish Delight home">
-      <span>Turkish Delight</span>
-    </a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle><span></span><span></span></button>
-    <nav id="site-nav" class="site-nav" aria-label="Main navigation" data-nav>
-      <a href="{{ url_for('tours') }}">Tours</a>
-      <a href="{{ url_for('guides') }}">Guides</a>
-      <a href="{{ url_for('about') }}">Our story</a>
-      <a href="{{ url_for('gallery') }}">Gallery</a>
-      <a href="{{ url_for('contact') }}">Contact</a>
-      {% if current_user.is_authenticated %}
-        <a href="{{ url_for('profile') }}">My account</a>
-        <form action="{{ url_for('logout') }}" method="post" class="nav-form">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="text-button" type="submit">Log out</button>
-        </form>
-      {% else %}
-        <a href="{{ url_for('login') }}">Log in</a>
-        <a class="button button-small" href="{{ url_for('register') }}">Join a tour</a>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Food-led free walking tours through the stories of İzmir.">
+    <title>{% block title %}Turkish Delight{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,500&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-header>
+      <a class="brand" href="{{ url_for('home') }}" aria-label="Turkish Delight home">
+        <span>Turkish Delight</span>
+      </a>
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-nav"
+        data-nav-toggle
+      >
+        <span></span>
+        <span></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Main navigation" data-nav>
+        <a href="{{ url_for('tours') }}">Tours</a>
+        <a href="{{ url_for('guides') }}">Guides</a>
+        <a href="{{ url_for('about') }}">Our story</a>
+        <a href="{{ url_for('contact') }}">Contact</a>
+        {% if current_user.is_authenticated %}
+          {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('admin_dashboard') }}">Administration</a>
+          {% else %}
+            <a href="{{ url_for('profile') }}">My account</a>
+          {% endif %}
+          <form action="{{ url_for('logout') }}" method="post" class="nav-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="text-button" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}">Log in</a>
+          <a class="button button-small" href="{{ url_for('register') }}">Join a tour</a>
+        {% endif %}
+      </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <aside class="flash-stack" aria-live="polite">
+          {% for category, message in messages %}
+            <p class="flash flash-{{ category }}">{{ message }}</p>
+          {% endfor %}
+        </aside>
       {% endif %}
-    </nav>
-  </header>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}<aside class="flash-stack" aria-live="polite">{% for category, message in messages %}<p class="flash flash-{{ category }}">{{ message }}</p>{% endfor %}</aside>{% endif %}
-  {% endwith %}
-  <main id="main">{% block content %}{% endblock %}</main>
-  <footer class="site-footer">
-    <div><a class="footer-brand" href="{{ url_for('home') }}">Turkish Delight</a><p>Experience the Sweet Side of Turkey</p></div>
-    <div class="footer-links"><a href="{{ url_for('tours') }}">Tours</a><a href="{{ url_for('guides') }}">Guides</a><a href="{{ url_for('about') }}">Our story</a><a href="{{ url_for('gallery') }}">Gallery</a><a href="{{ url_for('contact') }}">Contact</a></div>
-    <p class="copyright">© 2026 Turkish Delight. Made with care in İzmir.</p>
-  </footer>
-</body>
+    {% endwith %}
+
+    <main id="main">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <a class="footer-brand" href="{{ url_for('home') }}">Turkish Delight</a>
+        <p>Experience the Sweet Side of Turkey</p>
+      </div>
+      <div class="footer-links">
+        <a href="{{ url_for('tours') }}">Tours</a>
+        <a href="{{ url_for('guides') }}">Guides</a>
+        <a href="{{ url_for('about') }}">Our story</a>
+        <a href="{{ url_for('contact') }}">Contact</a>
+      </div>
+      <p class="copyright">© 2026 Turkish Delight. Made with care in İzmir.</p>
+    </footer>
+  </body>
 </html>

@@ -1,1 +1,51 @@
-{% extends "base.html" %}{% block title %}Join — Turkish Delight{% endblock %}{% block content %}<section class="auth-page"><div class="auth-image"><img src="{{ url_for('static', filename='Tour1_4.jpg') }}" alt="Sweets shared in İzmir"></div><div class="auth-panel"><p class="eyebrow">Join the table</p><h1>Create your<br><em>account.</em></h1><form method="post" class="stack-form" data-register><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="form-row"><label>First name<input name="first_name" required maxlength="80"></label><label>Last name<input name="last_name" required maxlength="80"></label></div><label>Email address<input type="email" name="email" required></label><label>Password <small>8 characters minimum</small><input type="password" name="password" minlength="8" required></label><fieldset><legend>I want to</legend><div class="role-options"><label><input type="radio" name="role" value="participant" checked> Join tours</label><label><input type="radio" name="role" value="guide"> Lead tours</label></div></fieldset><fieldset class="languages" data-languages hidden><legend>Languages you speak</legend>{% for language in languages %}<label><input type="checkbox" name="languages" value="{{ language }}"> {{ language }}</label>{% endfor %}</fieldset><button class="button button-dark button-full" type="submit">Create account</button></form><p>Already a member? <a href="{{ url_for('login') }}">Log in</a></p></div></section>{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Join — Turkish Delight{% endblock %}
+
+{% block content %}
+  <section class="auth-page">
+    <div class="auth-image">
+      <img src="{{ url_for('static', filename='Tour1_4.jpg') }}" alt="Sweets shared in İzmir">
+    </div>
+    <div class="auth-panel">
+      <p class="eyebrow">Join the table</p>
+      <h1>Create your<br><em>account.</em></h1>
+      <form method="post" class="stack-form" data-register>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-row">
+          <label>
+            First name
+            <input name="first_name" required maxlength="80">
+          </label>
+          <label>
+            Last name
+            <input name="last_name" required maxlength="80">
+          </label>
+        </div>
+        <label>
+          Email address
+          <input type="email" name="email" required>
+        </label>
+        <label>
+          Password <small>8 characters minimum</small>
+          <input type="password" name="password" minlength="8" required>
+        </label>
+        <fieldset>
+          <legend>I want to</legend>
+          <div class="role-options">
+            <label><input type="radio" name="role" value="participant" checked> Join tours</label>
+            <label><input type="radio" name="role" value="guide"> Lead tours</label>
+          </div>
+        </fieldset>
+        <fieldset class="languages" data-languages hidden>
+          <legend>Languages you speak</legend>
+          {% for language in languages %}
+            <label><input type="checkbox" name="languages" value="{{ language }}"> {{ language }}</label>
+          {% endfor %}
+        </fieldset>
+        <button class="button button-dark button-full" type="submit">Create account</button>
+      </form>
+      <p>Already a member? <a href="{{ url_for('login') }}">Log in</a></p>
+    </div>
+  </section>
+{% endblock %}

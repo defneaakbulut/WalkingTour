@@ -1,24 +1,124 @@
 {% extends "base.html" %}
+
 {% block title %}{{ 'Edit' if tour else 'Create' }} tour — Turkish Delight{% endblock %}
+
 {% block content %}
-<section class="form-page">
-  <div>
-    <p class="eyebrow">Guide studio</p>
-    <h1>{{ 'Refine your' if tour else 'Create a new' }}<br><em>walking story.</em></h1>
-    {% if locked %}<p class="notice">This tour has reservations. Its schedule, meeting point, duration, language, and capacity are now locked.</p>{% endif %}
-  </div>
-  <form method="post" enctype="multipart/form-data" class="editor-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="form-row"><label>Title<input name="title" required value="{{ tour.title if tour else '' }}"></label><label>Subtitle<input name="subtitle" required value="{{ tour.subtitle if tour else '' }}"></label></div>
-    <label>Short description<textarea name="description" rows="3" required>{{ tour.description if tour else '' }}</textarea></label>
-    <label>The story<textarea name="story" rows="4" required>{{ tour.story if tour else '' }}</textarea></label>
-    <label>Final message<textarea name="final_message" rows="2" required>{{ tour.final_message if tour else '' }}</textarea></label>
-    <div class="form-row"><label>Foods <small>comma-separated</small><input name="foods" value="{{ tour.foods|join(', ') if tour else '' }}"></label><label>Language<select name="language" required {% if locked %}disabled{% endif %}>{% for language in languages %}<option {% if tour and tour.language==language %}selected{% endif %}>{{ language }}</option>{% endfor %}</select>{% if locked %}<input type="hidden" name="language" value="{{ tour.language }}">{% endif %}</label></div>
-    <div class="form-row"><label>Stops <small>one per line, minimum 4</small><textarea name="stops" rows="6" required>{{ tour.stops|join('\n') if tour else '' }}</textarea></label><label>Story highlights <small>one per line</small><textarea name="story_points" rows="6">{{ tour.story_points|join('\n') if tour else '' }}</textarea></label></div>
-    <div class="form-row three"><label>Meeting point<input name="meeting_point" required value="{{ tour.meeting_point if tour else '' }}" {% if locked %}readonly{% endif %}></label><label>Duration (minutes)<input type="number" name="duration" min="30" required value="{{ tour.duration if tour else 120 }}" {% if locked %}readonly{% endif %}></label><label>Maximum group<input type="number" name="capacity" min="1" required value="{{ tour.capacity if tour else 10 }}" {% if locked %}readonly{% endif %}></label></div>
-    <fieldset><legend>Weekly schedule</legend><div class="schedule-grid">{% for day in range(7) %}<label>{{ weekdays[day] }}<input type="time" name="day_{{ day }}" value="{{ schedule.get(day, '') }}" {% if locked %}readonly{% endif %}></label>{% endfor %}</div></fieldset>
-    {% if not tour %}<label>Five promotional photos<input type="file" name="photos" accept="image/png,image/jpeg,image/webp" multiple required><small>Select exactly five images.</small></label>{% endif %}
-    <button class="button button-dark" type="submit">{{ 'Save changes' if tour else 'Create tour' }}</button>
-  </form>
-</section>
+  <section class="form-page">
+    <div>
+      <p class="eyebrow">Guide studio</p>
+      <h1>{{ 'Refine your' if tour else 'Create a new' }}<br><em>walking story.</em></h1>
+      {% if locked %}
+        <p class="notice">
+          This tour has reservations. Its schedule, meeting point, duration, language, and capacity are now locked.
+        </p>
+      {% endif %}
+    </div>
+    <form method="post" enctype="multipart/form-data" class="editor-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <label>
+          Title
+          <input name="title" required value="{{ tour.title if tour else '' }}">
+        </label>
+        <label>
+          Subtitle
+          <input name="subtitle" required value="{{ tour.subtitle if tour else '' }}">
+        </label>
+      </div>
+      <label>
+        Short description
+        <textarea name="description" rows="3" required>{{ tour.description if tour else '' }}</textarea>
+      </label>
+      <label>
+        The story
+        <textarea name="story" rows="4" required>{{ tour.story if tour else '' }}</textarea>
+      </label>
+      <label>
+        Final message
+        <textarea name="final_message" rows="2" required>{{ tour.final_message if tour else '' }}</textarea>
+      </label>
+      <div class="form-row">
+        <label>
+          Foods <small>comma-separated</small>
+          <input name="foods" value="{{ tour.foods|join(', ') if tour else '' }}">
+        </label>
+        <label>
+          Language
+          <select name="language" required {% if locked %}disabled{% endif %}>
+            {% for language in languages %}
+              <option {% if tour and tour.language == language %}selected{% endif %}>{{ language }}</option>
+            {% endfor %}
+          </select>
+          {% if locked %}<input type="hidden" name="language" value="{{ tour.language }}">{% endif %}
+        </label>
+      </div>
+      <div class="form-row">
+        <label>
+          Stops <small>one per line, minimum 4</small>
+          <textarea name="stops" rows="6" required>{{ tour.stops|join('\n') if tour else '' }}</textarea>
+        </label>
+        <label>
+          Story highlights <small>one per line</small>
+          <textarea name="story_points" rows="6">{{ tour.story_points|join('\n') if tour else '' }}</textarea>
+        </label>
+      </div>
+      <div class="form-row three">
+        <label>
+          Meeting point
+          <input
+            name="meeting_point"
+            required
+            value="{{ tour.meeting_point if tour else '' }}"
+            {% if locked %}readonly{% endif %}
+          >
+        </label>
+        <label>
+          Duration (minutes)
+          <input
+            type="number"
+            name="duration"
+            min="30"
+            required
+            value="{{ tour.duration if tour else 120 }}"
+            {% if locked %}readonly{% endif %}
+          >
+        </label>
+        <label>
+          Maximum group
+          <input
+            type="number"
+            name="capacity"
+            min="1"
+            required
+            value="{{ tour.capacity if tour else 10 }}"
+            {% if locked %}readonly{% endif %}
+          >
+        </label>
+      </div>
+      <fieldset>
+        <legend>Weekly schedule</legend>
+        <div class="schedule-grid">
+          {% for day in range(7) %}
+            <label>
+              {{ weekdays[day] }}
+              <input
+                type="time"
+                name="day_{{ day }}"
+                value="{{ schedule.get(day, '') }}"
+                {% if locked %}readonly{% endif %}
+              >
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% if not tour %}
+        <label>
+          Five promotional photos
+          <input type="file" name="photos" accept="image/png,image/jpeg,image/webp" multiple required>
+          <small>Select exactly five images.</small>
+        </label>
+      {% endif %}
+      <button class="button button-dark" type="submit">{{ 'Save changes' if tour else 'Create tour' }}</button>
+    </form>
+  </section>
 {% endblock %}

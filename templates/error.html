@@ -1,1 +1,9 @@
-{% extends "base.html" %}{% block content %}<section class="error-page"><p class="eyebrow">Error {{ code }}</p><h1>{{ message }}</h1><a class="button button-dark" href="{{ url_for('home') }}">Back to İzmir</a></section>{% endblock %}
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="error-page">
+    <p class="eyebrow">Error {{ code }}</p>
+    <h1>{{ message }}</h1>
+    <a class="button button-dark" href="{{ url_for('home') }}">Back to İzmir</a>
+  </section>
+{% endblock %}
