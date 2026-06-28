@@ -239,11 +239,6 @@
     gap: 1rem
 }
 
-.demo-hint {
-    font-size: .75rem;
-    color: #57706c
-}
-
 /* Participant and guide dashboards. */
 .dashboard {
     padding: 7rem 8vw;

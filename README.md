@@ -41,6 +41,6 @@ Administrator account (Prova finale):
 
 Set a secure `SECRET_KEY` environment variable in production. For PythonAnywhere, point the WSGI file at `app` in `app.py` and set the working directory to this project.
 
-Some websites that I was inspired by:
+Some websites that I was inspired by while designing:
 https://www.izmir.bel.tr/tr/Anasayfa
 https://goturkiye.com/izmir/routes
