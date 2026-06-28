@@ -1,0 +1,404 @@
+/* Theme overrides plus home, guide, participant, admin, authentication decoration, and responsive layout refinements. */
+
+/* Final palette and navigation overrides. */
+.button:hover {
+    background: var(--sea);
+    color: var(--paper)
+}
+
+.site-footer {
+    background: var(--deep);
+    color: var(--paper)
+}
+
+.site-footer p {
+    color: rgba(253, 248, 237, .72)
+}
+
+.copyright {
+    border-color: rgba(253, 248, 237, .2)
+}
+
+.hero,
+.taste-section {
+    color: var(--paper)
+}
+
+.guide-profile-copy li small,
+.demo-hint,
+.admin-no-tours {
+    color: var(--sea)
+}
+
+.hero-overlay {
+    background: linear-gradient(90deg, rgba(64, 136, 169, .56) 0%, rgba(64, 136, 169, .3) 52%, rgba(64, 136, 169, .08) 100%), linear-gradient(0deg, rgba(64, 69, 39, .14), transparent 50%)
+}
+
+.site-nav .button {
+    background: var(--deep);
+    color: #FDF8ED
+}
+
+.site-nav .button:hover {
+    background: var(--clay);
+    color: #FDF8ED
+}
+
+.site-header-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: transparent;
+    color: #FDF8ED;
+    border-bottom-color: rgba(253, 248, 237, .22)
+}
+
+.site-header-overlay .nav-toggle span {
+    border-color: #FDF8ED
+}
+
+.home-hero {
+    height: 100vh
+}
+
+@media(max-width:1100px) {
+    .site-header-overlay .site-nav.open {
+        color: var(--ink)
+    }
+
+    .site-header-overlay .site-nav.open .text-button {
+        color: var(--ink)
+    }
+}
+
+/* Home tour decorations and filter/card layout. */
+.home-tours {
+    position: relative;
+    overflow: hidden
+}
+
+.tour-decoration {
+    position: absolute;
+    top: 1rem;
+    width: min(25vw, 320px);
+    height: auto;
+    pointer-events: none;
+    user-select: none
+}
+
+.tour-decoration-left {
+    left: 1.5vw
+}
+
+.tour-decoration-right {
+    right: 1.5vw;
+    transform: scaleX(-1)
+}
+
+.home-section-head,
+.home-tours .filters,
+.home-tour-grid {
+    position: relative;
+    z-index: 1
+}
+
+.home-section-head {
+    justify-content: center;
+    text-align: center
+}
+
+@media(max-width:700px) {
+    .tour-decoration {
+        top: .6rem;
+        width: 125px
+    }
+
+    .tour-decoration-left {
+        left: -28px
+    }
+
+    .tour-decoration-right {
+        right: -28px
+    }
+}
+
+.guides-page-hero {
+    padding: 4rem 8vw 2.5rem
+}
+
+.guides-page-hero .eyebrow {
+    margin-bottom: .8rem
+}
+
+.guides-page-hero h1 {
+    font-size: clamp(3.5rem, 6vw, 6rem);
+    margin-bottom: 0
+}
+
+.guides-grid {
+    padding-top: 3rem
+}
+
+@media(max-width:620px) {
+    .guides-page-hero {
+        padding: 3rem 5vw 2rem
+    }
+
+    .guides-grid {
+        padding-top: 2rem
+    }
+}
+
+.auth-image video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+}
+
+.home-tours-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) 1fr;
+    gap: 3rem;
+    align-items: start
+}
+
+.home-tours-layout .filters {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    position: sticky;
+    top: 1.5rem
+}
+
+.home-tours-layout .filters .button {
+    min-height: 54px
+}
+
+.home-tours-layout .clear-filter {
+    min-height: 44px
+}
+
+.home-tours-layout .home-tour-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+}
+
+@media(max-width:800px) {
+    .home-tours-layout {
+        grid-template-columns: 1fr
+    }
+
+    .home-tours-layout .filters {
+        position: static;
+        display: grid;
+        grid-template-columns: 1fr 1fr
+    }
+
+    .home-tours-layout .home-tour-grid {
+        grid-template-columns: 1fr 1fr
+    }
+}
+
+@media(max-width:620px) {
+
+    .home-tours-layout .filters,
+    .home-tours-layout .home-tour-grid {
+        grid-template-columns: 1fr
+    }
+}
+
+/* Participant account layout. */
+.reservations-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-bottom: 2rem
+}
+
+.dashboard .reservations-heading h2 {
+    margin: 0
+}
+
+@media(max-width:620px) {
+    .reservations-heading {
+        align-items: flex-start;
+        flex-direction: column
+    }
+
+    .reservations-heading .button {
+        width: 100%
+    }
+}
+
+.participant-dashboard {
+    position: relative;
+    overflow: hidden
+}
+
+.participant-decoration {
+    position: absolute;
+    top: -2rem;
+    right: -2rem;
+    width: min(34vw, 420px);
+    height: auto;
+    pointer-events: none;
+    user-select: none
+}
+
+.participant-dashboard>section {
+    position: relative;
+    z-index: 1
+}
+
+.dashboard-end-action {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 3rem
+}
+
+@media(max-width:620px) {
+    .participant-decoration {
+        top: -1rem;
+        right: -55px;
+        width: 230px
+    }
+
+    .dashboard-end-action .button {
+        width: 100%
+    }
+}
+
+/* Admin and guide directory decorations. */
+.admin-page {
+    position: relative;
+    overflow: hidden
+}
+
+.admin-decoration {
+    position: absolute;
+    top: .5rem;
+    width: min(24vw, 310px);
+    height: auto;
+    pointer-events: none;
+    user-select: none
+}
+
+.admin-decoration-left {
+    left: 1.5vw
+}
+
+.admin-decoration-right {
+    right: 1.5vw;
+    transform: scaleX(-1)
+}
+
+.admin-page>header,
+.admin-page>section {
+    position: relative;
+    z-index: 1
+}
+
+@media(max-width:700px) {
+    .admin-decoration {
+        top: .25rem;
+        width: 120px
+    }
+
+    .admin-decoration-left {
+        left: -28px
+    }
+
+    .admin-decoration-right {
+        right: -28px
+    }
+}
+
+.guides-page-hero {
+    position: relative;
+    overflow: hidden;
+    text-align: center
+}
+
+.guide-decoration {
+    position: absolute;
+    top: .5rem;
+    width: min(24vw, 300px);
+    height: auto;
+    pointer-events: none;
+    user-select: none
+}
+
+.guide-decoration-left {
+    left: 1.5vw
+}
+
+.guide-decoration-right {
+    right: 1.5vw;
+    transform: scaleX(-1)
+}
+
+.guides-page-hero>p,
+.guides-page-hero>h1 {
+    position: relative;
+    z-index: 1
+}
+
+.guides-page-hero>h1 {
+    margin-left: auto;
+    margin-right: auto
+}
+
+@media(max-width:700px) {
+    .guide-decoration {
+        top: .25rem;
+        width: 115px
+    }
+
+    .guide-decoration-left {
+        left: -25px
+    }
+
+    .guide-decoration-right {
+        right: -25px
+    }
+}
+
+/* Authentication decoration. */
+.auth-panel {
+    position: relative
+}
+
+.auth-decoration {
+    position: relative;
+    width: min(80%, 420px);
+    height: 92px;
+    align-self: center;
+    overflow: hidden;
+    margin: -2rem auto 1.25rem;
+    pointer-events: none
+}
+
+.auth-decoration img {
+    position: absolute;
+    top: -52px;
+    left: 0;
+    width: 100%;
+    height: auto
+}
+
+.auth-panel>.auth-decoration+h1 {
+    text-align: center
+}
+
+@media(max-width:900px) {
+    .auth-decoration {
+        width: min(75%, 340px);
+        height: 78px;
+        margin-top: -1rem
+    }
+
+    .auth-decoration img {
+        top: -42px
+    }
+}

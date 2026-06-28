@@ -1,0 +1,14 @@
+/* Design tokens and shared custom properties. */
+
+:root {
+    --ink: #404527;
+    --deep: #4088A9;
+    --cream: #FDF8ED;
+    --paper: #FDF8ED;
+    --clay: #84287E;
+    --gold: #CBC362;
+    --sea: #4088A9;
+    --line: rgba(64, 69, 39, .2);
+    --serif: "Playfair Display", Georgia, serif;
+    --sans: "DM Sans", Arial, sans-serif
+}

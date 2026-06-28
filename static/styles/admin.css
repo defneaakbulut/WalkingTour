@@ -1,0 +1,349 @@
+/* Administration dashboard, statistics, guide/tour details, and component-local responsive rules. */
+
+.admin-page {
+    padding: 7rem 6vw;
+    background: var(--paper);
+    min-height: 80vh
+}
+
+.admin-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 3rem;
+    margin-bottom: 5rem
+}
+
+.admin-heading h1 {
+    font: 600 clamp(3.8rem, 7vw, 7rem)/.9 var(--serif);
+    letter-spacing: -.045em;
+    margin: 0
+}
+
+.admin-heading h1 em {
+    color: var(--clay);
+    font-weight: 500
+}
+
+.admin-heading>p {
+    max-width: 400px;
+    font-size: 1.05rem
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line)
+}
+
+.admin-stats article {
+    padding: 2rem;
+    border-right: 1px solid var(--line)
+}
+
+.admin-stats article:first-child {
+    padding-left: 0
+}
+
+.admin-stats article:last-child {
+    border-right: 0
+}
+
+.admin-stats span {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: .65rem;
+    font-weight: 700
+}
+
+.admin-stats strong {
+    display: block;
+    font: 600 4rem var(--serif);
+    color: var(--clay);
+    margin-top: .5rem
+}
+
+.admin-language-stats {
+    display: grid;
+    grid-template-columns: .7fr 1.3fr;
+    gap: 8vw;
+    padding: 7rem 0
+}
+
+.language-bars>div {
+    display: grid;
+    grid-template-columns: 120px 1fr 40px;
+    align-items: center;
+    gap: 1rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--line)
+}
+
+.language-bars span {
+    font-weight: 700
+}
+
+.language-bars strong {
+    text-align: right
+}
+
+.language-bars progress {
+    width: 100%;
+    height: 8px;
+    border: 0;
+    background: var(--cream);
+    accent-color: var(--clay)
+}
+
+.admin-section-title {
+    padding: 7rem 0 3rem
+}
+
+.admin-guide>header {
+    display: grid;
+    grid-template-columns: 60px 1.2fr 1fr auto;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem 0
+}
+
+.admin-guide>header>span {
+    font: 600 1.3rem var(--serif);
+    color: var(--clay)
+}
+
+.admin-guide h3 {
+    font: 600 1.7rem var(--serif);
+    margin: 0
+}
+
+.admin-guide header a {
+    font-size: .8rem;
+    text-decoration: underline
+}
+
+.admin-guide header p {
+    margin: 0
+}
+
+.admin-guide header small {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: .58rem
+}
+
+.admin-guide header>strong {
+    background: var(--gold);
+    padding: .5rem .8rem;
+    font-size: .75rem
+}
+
+.admin-tour-list {
+    margin-left: 60px
+}
+
+.admin-tour {
+    border-top: 1px solid var(--line)
+}
+
+.admin-tour:last-child {
+    border-bottom: 1px solid var(--line)
+}
+
+.admin-tour summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.3rem 0;
+    cursor: pointer
+}
+
+.admin-tour summary::-webkit-details-marker {
+    display: none
+}
+
+.admin-tour summary span {
+    font: 600 1.25rem var(--serif)
+}
+
+.admin-tour summary small {
+    display: block;
+    font: 700 .6rem var(--sans);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--clay)
+}
+
+.admin-tour summary b {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em
+}
+
+.admin-tour[open] summary b {
+    font-size: 0
+}
+
+.admin-tour[open] summary b:after {
+    content: 'Close details';
+    font-size: .72rem
+}
+
+.admin-tour-detail {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 3rem;
+    padding: 1rem 0 3rem
+}
+
+.admin-tour-copy>p:first-child {
+    font-size: 1.05rem
+}
+
+.admin-tour-copy dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 2rem 0
+}
+
+.admin-tour-copy dl div {
+    padding: 1rem;
+    border: 1px solid var(--line);
+    margin: -1px 0 0 -1px
+}
+
+.admin-tour-copy dt,
+.admin-tour-copy h4 {
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: .65rem;
+    font-weight: 700
+}
+
+.admin-tour-copy dd {
+    margin: .3rem 0 0;
+    font-weight: 600
+}
+
+.admin-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem
+}
+
+.admin-tour-copy blockquote {
+    font: 500 1.4rem var(--serif);
+    margin: 2rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--gold)
+}
+
+.admin-tour-photos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    align-content: start
+}
+
+.admin-tour-photos img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover
+}
+
+.admin-tour-photos img:first-child {
+    grid-column: 1/-1;
+    height: 280px
+}
+
+.admin-no-tours {
+    padding: 1rem 0;
+    color: #60736f
+}
+
+@media(max-width:900px) {
+    .admin-heading {
+        display: block
+    }
+
+    .admin-heading>p {
+        margin-top: 2rem
+    }
+
+    .admin-stats {
+        grid-template-columns: 1fr 1fr
+    }
+
+    .admin-stats article:nth-child(2) {
+        border-right: 0
+    }
+
+    .admin-language-stats,
+    .admin-tour-detail {
+        grid-template-columns: 1fr
+    }
+
+    .admin-guide>header {
+        grid-template-columns: 45px 1fr auto
+    }
+
+    .admin-guide header p {
+        grid-column: 2/-1
+    }
+
+    .admin-tour-list {
+        margin-left: 45px
+    }
+}
+
+@media(max-width:620px) {
+    .admin-page {
+        padding: 5rem 5vw
+    }
+
+    .admin-heading h1 {
+        font-size: 3.8rem
+    }
+
+    .admin-stats strong {
+        font-size: 3rem
+    }
+
+    .admin-stats article {
+        padding: 1.2rem .7rem
+    }
+
+    .admin-language-stats {
+        padding: 5rem 0
+    }
+
+    .language-bars>div {
+        grid-template-columns: 85px 1fr 25px
+    }
+
+    .admin-guide>header {
+        gap: 1rem
+    }
+
+    .admin-tour-list {
+        margin-left: 0
+    }
+
+    .admin-tour summary {
+        align-items: flex-start
+    }
+
+    .admin-tour-copy dl,
+    .admin-lists {
+        grid-template-columns: 1fr
+    }
+
+    .admin-tour-photos img:first-child {
+        height: 210px
+    }
+}

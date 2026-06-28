@@ -1,0 +1,299 @@
+/* Editorial tour journey, horizontal gallery, booking card refinements, tasting section, and responsive behavior. */
+
+/* Journey overview and stop timeline. */
+.journey-info {
+    top: 1.5rem;
+    padding: 2.5rem;
+    background: var(--cream);
+    border: 1px solid var(--deep);
+    box-shadow: inset 0 0 0 4px var(--cream), inset 0 0 0 5px var(--deep)
+}
+
+.tour-gallery {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-top: 1rem;
+    grid-template-columns: 1.4fr .7fr .7fr;
+    grid-template-rows: 250px 250px
+}
+
+.journey-section {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr);
+    gap: 5rem;
+    align-items: start
+}
+
+.journey-main>h2 {
+    text-transform: none;
+    margin-bottom: 3rem
+}
+
+.journey-list {
+    border-top: 1px solid var(--line)
+}
+
+.journey-stop {
+    position: relative;
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 1.5rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--line)
+}
+
+.journey-stop>span {
+    position: relative;
+    z-index: 1;
+    width: 46px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--deep);
+    border-radius: 14px;
+    background: var(--paper);
+    font: 600 1.1rem var(--serif)
+}
+
+.journey-stop:not(:last-child):before {
+    content: "";
+    position: absolute;
+    left: 22px;
+    top: 69px;
+    bottom: -22px;
+    border-left: 1px solid var(--line)
+}
+
+.journey-stop h3 {
+    font: 600 clamp(1.5rem, 2.3vw, 2.2rem)/1.15 var(--serif);
+    margin: 0 0 .6rem
+}
+
+.journey-stop p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--sea)
+}
+
+.journey-info {
+    position: sticky
+}
+
+.journey-info>div+div {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line)
+}
+
+.journey-info .eyebrow {
+    margin-bottom: .5rem;
+    color: var(--sea)
+}
+
+.journey-info h3 {
+    font: 600 1.35rem var(--serif);
+    margin: .25rem 0
+}
+
+.journey-info ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0
+}
+
+.journey-info li {
+    margin: .65rem 0
+}
+
+.tour-tastes {
+    grid-template-columns: .75fr 1.25fr;
+    align-items: center;
+    padding: 6rem max(8vw, calc((100vw - 1320px)/2))
+}
+
+.tour-tastes h2 {
+    font-size: clamp(2.8rem, 4vw, 4.8rem)
+}
+
+.tour-tastes .taste-list {
+    margin-top: 0
+}
+
+@media(max-width:950px) {
+    .journey-section {
+        grid-template-columns: 1fr;
+        gap: 3rem
+    }
+
+    .journey-info {
+        position: static
+    }
+
+    .tour-gallery {
+        grid-template-rows: 210px 210px
+    }
+}
+
+@media(max-width:620px) {
+
+    .tour-gallery {
+        display: flex;
+        overflow-x: auto;
+        padding-right: 0
+    }
+
+    .tour-gallery img {
+        flex: 0 0 85vw;
+        height: 360px
+    }
+
+    .journey-stop {
+        grid-template-columns: 52px 1fr;
+        gap: 1rem
+    }
+
+    .journey-info {
+        padding: 2rem
+    }
+
+    .tour-tastes {
+        grid-template-columns: 1fr;
+        padding: 4rem 5vw
+    }
+
+    .tour-tastes .taste-list {
+        margin-top: 2rem
+    }
+}
+
+/* Compact title and horizontal tour gallery */
+.tour-title-section {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 2.5rem 8vw 1.5rem
+}
+
+.tour-title-section>.text-link {
+    margin: 0 0 3rem
+}
+
+.tour-title-section .eyebrow {
+    margin-bottom: 1rem;
+    color: var(--sea)
+}
+
+.tour-title-section h1 {
+    max-width: 950px;
+    margin: 0 0 1rem;
+    font: 600 clamp(2.5rem, 4.8vw, 4.7rem)/.98 var(--serif);
+    letter-spacing: -.04em;
+    color: var(--ink)
+}
+
+.tour-title-section>p:last-child {
+    max-width: 800px;
+    margin: 0;
+    font: 500 clamp(1.1rem, 1.7vw, 1.4rem)/1.55 var(--serif)
+}
+
+.journey-section .booking-card {
+    top: 1.5rem;
+    padding: 2.5rem;
+    background: var(--cream);
+    border: 1px solid var(--deep);
+    box-shadow: inset 0 0 0 4px var(--cream), inset 0 0 0 5px var(--deep)
+}
+
+.journey-section .booking-card h3 {
+    margin-top: 2rem;
+    font-size: 2rem
+}
+
+.journey-section .guide {
+    padding: 0 0 1.5rem
+}
+
+.journey-section .guide img {
+    width: 72px;
+    height: 72px;
+    border-radius: 12px
+}
+
+.journey-section .button {
+    letter-spacing: .12em;
+    text-transform: uppercase
+}
+
+.tour-gallery {
+    display: flex;
+    max-width: none;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem max(8vw, calc((100vw - 1320px)/2)) 7rem;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none
+}
+
+.tour-gallery::-webkit-scrollbar {
+    display: none
+}
+
+.tour-gallery img,
+.tour-gallery img:first-child,
+.tour-gallery img:nth-child(n) {
+    display: block;
+    flex: 0 0 420px;
+    width: 420px;
+    height: 330px;
+    object-fit: cover;
+    grid-row: auto;
+    scroll-snap-align: start
+}
+
+@media(max-width:950px) {
+    .journey-section .booking-card {
+        position: static
+    }
+}
+
+@media(max-width:620px) {
+    .tour-title-section {
+        padding: 2rem 5vw 1rem
+    }
+
+    .tour-title-section>.text-link {
+        margin-bottom: 2rem
+    }
+
+    .tour-gallery {
+        padding: 1rem 5vw 4rem
+    }
+
+    .tour-gallery img,
+    .tour-gallery img:first-child,
+    .tour-gallery img:nth-child(n) {
+        flex-basis: 84vw;
+        width: 84vw;
+        height: 310px
+    }
+}
+
+/* Light tasting section aligned with the journey */
+.tour-tastes {
+    width: 84%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 4rem 0;
+    background: transparent;
+    color: var(--ink)
+}
+
+.tour-tastes .eyebrow {
+    color: var(--sea)
+}
+
+.tour-tastes .taste-list span {
+    color: var(--ink);
+    border-color: var(--line)
+}

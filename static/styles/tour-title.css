@@ -1,0 +1,95 @@
+/* Tour title/facts layout, responsive detail-bar rules, and reduced-motion behavior. */
+
+/* Tour title, information panel, and weekly facts */
+.tour-title-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, .7fr);
+    gap: 5rem;
+    align-items: start
+}
+
+.tour-title-copy {
+    padding-top: 1rem
+}
+
+.tour-title-copy>p:last-child {
+    max-width: 800px;
+    margin: 0;
+    font: 500 clamp(1.1rem, 1.7vw, 1.4rem)/1.55 var(--serif)
+}
+
+.tour-title-section .overview-info {
+    position: static
+}
+
+@media(max-width:950px) {
+    .tour-title-section {
+        grid-template-columns: 1fr;
+        gap: 3rem
+    }
+}
+
+.tour-title-copy .detail-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 2.5rem;
+    padding: 1.5rem 0;
+    background: transparent;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink)
+}
+
+.tour-title-copy .detail-bar span {
+    padding: 0 1rem;
+    border-right: 1px solid var(--line)
+}
+
+.tour-title-copy .detail-bar span:first-child {
+    padding-left: 0
+}
+
+.tour-title-copy .detail-bar span:last-child {
+    padding-right: 0;
+    border-right: 0
+}
+
+.tour-title-copy .detail-bar small {
+    color: var(--sea);
+    margin-bottom: .25rem
+}
+
+@media(max-width:800px) {
+    .tour-title-copy .detail-bar {
+        grid-template-columns: 1fr 1fr
+    }
+
+    .tour-title-copy .detail-bar span {
+        padding: 1rem;
+        border-bottom: 1px solid var(--line)
+    }
+}
+
+@media(max-width:620px) {
+    .tour-title-copy .detail-bar {
+        grid-template-columns: 1fr
+    }
+
+    .tour-title-copy .detail-bar span {
+        padding: 1rem 0;
+        border-right: 0
+    }
+
+    .tour-title-copy .detail-bar span:last-child {
+        border-bottom: 0
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+    * {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important
+    }
+}

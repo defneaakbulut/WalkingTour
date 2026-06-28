@@ -1,0 +1,125 @@
+/* Accessibility skip link, site header, navigation, and shared button variants. */
+
+.skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -4rem;
+    background: white;
+    padding: .7rem 1rem;
+    z-index: 100
+}
+
+.skip-link:focus {
+    top: 1rem
+}
+
+/* Primary site header and navigation. */
+.site-header {
+    height: 78px;
+    padding: 0 4vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--paper);
+    position: relative;
+    z-index: 30;
+    border-bottom: 1px solid transparent
+}
+
+.brand {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .7rem
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    font-size: .88rem;
+    font-weight: 600
+}
+
+.site-nav a:not(.button),
+.text-button {
+    position: relative
+}
+
+.site-nav a:not(.button):after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: -4px;
+    border-bottom: 1px solid;
+    transition: .2s
+}
+
+.site-nav a:hover:after {
+    right: 0
+}
+
+.nav-form {
+    margin: 0
+}
+
+.text-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-weight: 600
+}
+
+.nav-toggle {
+    display: none;
+    background: none;
+    border: 0;
+    width: 40px
+}
+
+.nav-toggle span {
+    display: block;
+    border-top: 2px solid;
+    margin: 7px
+}
+
+/* Shared button variants. */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    background: var(--gold);
+    color: var(--deep);
+    border: 0;
+    padding: .95rem 1.35rem;
+    font-weight: 700;
+    font-size: .88rem;
+    letter-spacing: .01em;
+    transition: transform .2s, background .2s
+}
+
+.button:hover {
+    transform: translateY(-2px);
+    background: #f0c971
+}
+
+.button-small {
+    padding: .65rem 1rem
+}
+
+.button-dark {
+    background: var(--ink);
+    color: var(--paper)
+}
+
+.button-dark:hover {
+    background: var(--clay)
+}
+
+.button-full {
+    width: 100%
+}

@@ -1,0 +1,278 @@
+/* Hero, typography, filters, lightbox, shared form controls, footer, flash messages, and flash animation. */
+
+.hero {
+    height: calc(100vh - 78px);
+    min-height: 650px;
+    position: relative;
+    color: white;
+    display: flex;
+    align-items: center;
+    overflow: hidden
+}
+
+.hero-image {
+    position: absolute;
+    inset: 0;
+    background: url("../Tour1_3.jpg") center 57%/cover no-repeat;
+    transform: scale(1.02)
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(9, 35, 31, .88) 0%, rgba(9, 35, 31, .56) 50%, rgba(9, 35, 31, .16) 100%), linear-gradient(0deg, rgba(0, 0, 0, .2), transparent 50%)
+}
+
+.hero-content {
+    position: relative;
+    max-width: 850px;
+    margin-left: 8vw;
+    padding-bottom: 3vh
+}
+
+/* Shared display typography and section framing. */
+.eyebrow {
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    font-size: .72rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem
+}
+
+.hero h1,
+.auth-panel h1,
+.dashboard h1,
+.form-page h1,
+.error-page h1 {
+    font: 600 clamp(3.5rem, 7.5vw, 7.4rem)/.9 var(--serif);
+    letter-spacing: -.045em;
+    margin: .1em 0 .28em
+}
+
+.hero h1 em,
+h2 em,
+.auth-panel h1 em,
+.form-page h1 em {
+    color: var(--gold);
+    font-weight: 500
+}
+
+.hero-copy {
+    font-size: 1.07rem;
+    max-width: 560px;
+    color: rgba(255, 255, 255, .84)
+}
+
+.section {
+    padding: 8rem 8vw
+}
+
+h2 {
+    font: 600 clamp(2.8rem, 5vw, 5.4rem)/.98 var(--serif);
+    letter-spacing: -.04em;
+    margin: 0
+}
+
+h2 em {
+    color: var(--clay)
+}
+
+.text-link {
+    display: inline-flex;
+    gap: .7rem;
+    font-weight: 700;
+    border-bottom: 1px solid;
+    padding: 0 0 .35rem;
+    margin-top: 1rem
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 2rem
+}
+
+.section-heading>p {
+    max-width: 380px;
+    font-size: 1.05rem
+}
+
+/* Tour filters and reusable empty states. */
+.filters {
+    margin: 4rem 0 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line)
+}
+
+.filters label {
+    background: var(--paper);
+    padding: .65rem 1rem;
+    display: flex;
+    flex-direction: column
+}
+
+.filters label span {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-weight: 700
+}
+
+.filters input,
+.filters select {
+    border: 0;
+    background: transparent;
+    outline: none;
+    padding: .25rem 0
+}
+
+.clear-filter {
+    background: var(--paper);
+    display: grid;
+    place-items: center;
+    padding: 0 1rem;
+    font-size: .8rem;
+    text-decoration: underline
+}
+
+.tour-meta {
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    font-weight: 700;
+    font-size: .68rem;
+    color: var(--clay)
+}
+
+.empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 5rem;
+    background: var(--cream)
+}
+
+/* Image lightbox. */
+.lightbox {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    max-width: 90vw;
+    max-height: 90vh
+}
+
+.lightbox::backdrop {
+    background: rgba(5, 20, 18, .9)
+}
+
+.lightbox img {
+    max-width: 88vw;
+    max-height: 86vh
+}
+
+.lightbox button {
+    position: fixed;
+    right: 3vw;
+    top: 2vw;
+    border: 0;
+    background: transparent;
+    color: white;
+    font-size: 3rem
+}
+
+/* Shared form controls. */
+.stack-form,
+.editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem
+}
+
+.stack-form>label,
+.editor-form>label,
+.form-row label,
+.mini-form label,
+.booking-card label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em
+}
+
+.stack-form input,
+.editor-form input,
+.editor-form textarea,
+.editor-form select,
+.mini-form input,
+.booking-card select,
+.booking-card input {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid rgba(23, 63, 58, .5);
+    background: transparent;
+    padding: .7rem 0;
+    outline: none;
+    text-transform: none;
+    letter-spacing: normal
+}
+
+/* Site footer. */
+.site-footer {
+    background: #0d2b27;
+    color: white;
+    padding: 4rem 5vw 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem
+}
+
+.footer-brand {
+    font: 600 2rem var(--serif)
+}
+
+.site-footer p {
+    margin: .25rem 0;
+    color: rgba(255, 255, 255, .65)
+}
+
+.copyright {
+    grid-column: 1/-1;
+    border-top: 1px solid rgba(255, 255, 255, .16);
+    padding-top: 1.5rem !important;
+    font-size: .75rem
+}
+
+/* Transient flash messages. */
+.flash-stack {
+    position: fixed;
+    right: 1rem;
+    top: 90px;
+    z-index: 60;
+    width: min(360px, calc(100vw - 2rem))
+}
+
+.flash {
+    padding: 1rem 1.2rem;
+    background: white;
+    border-left: 4px solid var(--sea);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .15);
+    animation: flash-in .3s
+}
+
+.flash-error {
+    border-color: var(--clay)
+}
+
+.flash-success {
+    border-color: var(--sea)
+}
+
+@keyframes flash-in {
+    from {
+        transform: translateX(20px);
+        opacity: 0
+    }
+}
