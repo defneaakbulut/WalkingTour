@@ -4,6 +4,18 @@
 
 {% block content %}
   <section class="form-page">
+    <img
+      class="tour-form-decoration tour-form-decoration-left"
+      src="{{ url_for('static', filename='decoration2.png') }}"
+      alt=""
+      aria-hidden="true"
+    >
+    <img
+      class="tour-form-decoration tour-form-decoration-right"
+      src="{{ url_for('static', filename='decoration2.png') }}"
+      alt=""
+      aria-hidden="true"
+    >
     <div>
       <p class="eyebrow">Guide studio</p>
       <h1>{{ 'Refine your' if tour else 'Create a new' }}<br><em>walking tour.</em></h1>

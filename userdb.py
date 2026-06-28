@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash
 from user import User
 
 PASSWORD_METHOD = "pbkdf2:sha256"
+DEFAULT_PROFILE_PHOTO = "GuideDefault.jpg"
 
 
 def hash_password(password):
@@ -32,11 +33,15 @@ def email_exists(db, email):
     return bool(db.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone())
 
 
-def create_user(db, first_name, last_name, email, password, role, languages):
+def create_user(
+    db, first_name, last_name, email, password, role, languages,
+    profile_photo=DEFAULT_PROFILE_PHOTO,
+):
     cursor = db.execute(
-        """INSERT INTO users(first_name,last_name,email,password_hash,role,languages)
-           VALUES(?,?,?,?,?,?)""",
-        (first_name, last_name, email, hash_password(password), role, json.dumps(languages)),
+        """INSERT INTO users(first_name,last_name,email,password_hash,role,languages,profile_photo)
+           VALUES(?,?,?,?,?,?,?)""",
+        (first_name, last_name, email, hash_password(password), role, json.dumps(languages),
+         profile_photo),
     )
     db.commit()
     return cursor.lastrowid
@@ -58,12 +63,12 @@ def count_role(db, role):
     return db.execute("SELECT COUNT(*) FROM users WHERE role=?", (role,)).fetchone()[0]
 
 
-def has_users(db):
-    return bool(db.execute("SELECT 1 FROM users").fetchone())
-
-
 def prepare_user_schema(db):
-    """Expand older databases to support the optional administrator role."""
+    """Expand older databases to support administrators and guide photos."""
+    original_columns = {
+        row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()
+    }
+    profile_photo_added = "profile_photo" not in original_columns
     table_sql = db.execute(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
     ).fetchone()["sql"]
@@ -77,17 +82,44 @@ def prepare_user_schema(db):
               first_name TEXT NOT NULL, last_name TEXT NOT NULL,
               email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
               role TEXT NOT NULL CHECK(role IN ('guide','participant','admin')),
-              languages TEXT NOT NULL DEFAULT '[]'
+              languages TEXT NOT NULL DEFAULT '[]',
+              profile_photo TEXT NOT NULL DEFAULT 'GuideDefault.jpg'
             );
-            INSERT INTO users_new SELECT * FROM users;
+            INSERT INTO users_new(id,first_name,last_name,email,password_hash,role,languages)
+            SELECT id,first_name,last_name,email,password_hash,role,languages FROM users;
             DROP TABLE users;
             ALTER TABLE users_new RENAME TO users;
             COMMIT;
             PRAGMA foreign_keys = ON;
         """)
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
+    if "profile_photo" not in columns:
+        db.execute(
+            "ALTER TABLE users ADD COLUMN profile_photo TEXT NOT NULL "
+            "DEFAULT 'GuideDefault.jpg'"
+        )
     db.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS one_platform_admin ON users(role) WHERE role='admin'"
     )
+    db.commit()
+    return profile_photo_added
+
+
+def migrate_legacy_guide_photos(db, static_folder):
+    """Preserve guide images previously inferred from each guide's tour IDs."""
+    guides = db.execute("SELECT id FROM users WHERE role='guide'").fetchall()
+    for guide in guides:
+        tours = db.execute(
+            "SELECT id FROM tours WHERE guide_id=? ORDER BY id", (guide["id"],)
+        ).fetchall()
+        for tour in tours:
+            filename = f"Guide{tour['id']}.jpg"
+            if (static_folder / filename).is_file():
+                db.execute(
+                    "UPDATE users SET profile_photo=? WHERE id=?", (filename, guide["id"])
+                )
+                break
+    db.commit()
 
 
 def ensure_admin_account(db):
@@ -121,25 +153,3 @@ def migrate_sample_password_hashes(db):
             changed = True
     if changed:
         db.commit()
-
-
-def seed_sample_users(db):
-    sample_users = [
-        ("Işıl", "Çakan", "isil@turkishdelight.test", "guide", ["English", "German"]),
-        ("Deniz", "Sürür", "deniz@turkishdelight.test", "guide", ["English", "Italian"]),
-        ("İlker", "Başar", "ilker@turkishdelight.test", "guide", ["English", "Spanish", "German"]),
-        ("Nisan", "Köse", "nisan@turkishdelight.test", "guide", ["English", "Italian"]),
-        ("Sofia", "Rossi", "sofia@example.test", "participant", []),
-        ("Lucas", "Meyer", "lucas@example.test", "participant", []),
-        ("Ines", "Costa", "ines@example.test", "participant", []),
-    ]
-    ids = []
-    for first, last, email, role, languages in sample_users:
-        cursor = db.execute(
-            """INSERT INTO users(first_name,last_name,email,password_hash,role,languages)
-               VALUES(?,?,?,?,?,?)""",
-            (first, last, email, hash_password("Delight2026!"), role, json.dumps(languages)),
-        )
-        ids.append(cursor.lastrowid)
-    db.commit()
-    return ids

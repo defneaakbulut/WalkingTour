@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
   first_name TEXT NOT NULL, last_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('guide','participant','admin')),
-  languages TEXT NOT NULL DEFAULT '[]'
+  languages TEXT NOT NULL DEFAULT '[]',
+  profile_photo TEXT NOT NULL DEFAULT 'GuideDefault.jpg'
 );
 CREATE UNIQUE INDEX IF NOT EXISTS one_platform_admin ON users(role) WHERE role = 'admin';
 CREATE TABLE IF NOT EXISTS tours (

@@ -15,7 +15,7 @@
         <img src="{{ url_for('static', filename='decoration1.png') }}" alt="">
       </div>
       <h1>Create your<br><em>account.</em></h1>
-      <form method="post" class="stack-form" data-register>
+      <form method="post" enctype="multipart/form-data" class="stack-form" data-register>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-row">
           <label>
@@ -49,10 +49,14 @@
           </div>
         </fieldset>
         <fieldset class="languages" data-languages hidden>
-          <legend>Languages you speak</legend>
+          <legend>Guide details</legend>
           {% for language in languages %}
             <label><input type="checkbox" name="languages" value="{{ language }}"> {{ language }}</label>
           {% endfor %}
+          <label>
+            Profile photo <small>optional</small>
+            <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp">
+          </label>
         </fieldset>
         <button class="button button-dark button-full" type="submit">Create account</button>
       </form>

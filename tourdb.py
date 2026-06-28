@@ -28,7 +28,8 @@ def get_tour(db, tour_id, guide_id=None):
 
 def get_tour_with_guide(db, tour_id):
     return db.execute(
-        """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
+        """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name,
+           u.profile_photo AS guide_image
            FROM tours t JOIN users u ON u.id=t.guide_id WHERE t.id=?""",
         (tour_id,),
     ).fetchone()
@@ -226,38 +227,3 @@ def save_report(db, tour_id, tour_date, attendees, evidence_photo):
         (tour_id, tour_date, attendees, evidence_photo),
     )
     db.commit()
-
-
-def seed_sample_tours(db, user_ids, today, now):
-    """Create the four required sample tours and reservations."""
-    from datetime import timedelta
-
-    tours = [
-        (user_ids[1], "Sweet İzmir", "Empires Through Desserts", "Explore İzmir through its famous sweets and discover how desserts became symbols of charity, memory, and celebration.", "From Ottoman palace kitchens to neighbourhood lokma stands, İzmir’s sweets carry customs across generations.", "In İzmir, desserts are not only food—they are acts of memory, charity and community.", ["Şambali", "Turkish Delight", "Lokma"], ["Kemeraltı Bazaar", "Historical Şambali shop", "Hisar Mosque", "Konak Square", "Traditional Lokma stand"], ["Ottoman cuisine", "Religious traditions", "Why lokma is distributed during funerals and celebrations", "Desserts as part of social life and community"], "Kemeraltı main gate", 150, "English", 12),
-        (user_ids[2], "Coffee and the Ottoman Empire", "The Drink That Conquered Europe", "Discover how Ottoman coffee culture transformed Europe and gave birth to modern cafés.", "Follow the coffee bean from Ottoman trade routes and convivial hans to the café tables of Europe.", "Without Ottoman coffeehouses, modern cafés in Europe might never have existed.", ["Turkish Coffee", "Optional Turkish Delight"], ["Kızlarağası Han", "Kemeraltı Bazaar", "Hisar Mosque", "Konak Square", "İzmir Clock Tower"], ["Ottoman trade routes", "Coffee culture", "Historical coffeehouses", "The spread of coffee to Europe"], "Courtyard of Kızlarağası Han", 120, "English", 10),
-        (user_ids[0], "Wine and Ancient Greeks", "The Taste of Ancient Smyrna", "Travel back to Ancient Smyrna and experience the role of wine in Greek and Roman civilization.", "At Smyrna’s ancient stones, learn how vines, ritual, and commerce connected the city to a Mediterranean world.", "Wine connected Ancient Smyrna to the entire Mediterranean world.", ["Grapes", "Local cheeses", "Aegean wines"], ["Agora of Smyrna", "Kadifekale", "Ancient Theatre of Smyrna", "Optional extension to Urla vineyards"], ["Ancient Greeks", "Dionysus", "Trade with Rome", "Wine culture of Ancient Smyrna"], "Agora visitor entrance", 180, "German", 8),
-        (user_ids[3], "The Boyoz Story", "How Immigrants Shaped İzmir", "Discover the story of the Sephardic Jews and how a pastry from Spain became one of İzmir's most iconic foods.", "Trace a 500-year migration through synagogues, market lanes, and the layered folds of a beloved pastry.", "You are eating a recipe that travelled from Spain over 500 years ago.", ["Boyoz"], ["Dostlar Fırını", "Kemeraltı Bazaar", "Havra Street", "Synagogue District", "Kızlarağası Han"], ["Expulsion of Sephardic Jews from Spain", "Arrival in the Ottoman Empire", "Multicultural history of İzmir", "Food and migration"], "Dostlar Fırını, Alsancak", 135, "Italian", 10),
-    ]
-    weekly = [[(1, "10:00"), (5, "10:30")], [(2, "14:00"), (6, "11:00")],
-              [(4, "15:00"), (6, "15:00")], [(0, "09:30"), (5, "09:30")]]
-    tour_ids = []
-    for values, schedules in zip(tours, weekly):
-        data = dict(zip(
-            ["guide_id", "title", "subtitle", "description", "story", "final_message", "foods",
-             "stops", "story_points", "meeting_point", "duration", "language", "capacity"], values
-        ))
-        data["story"] = ""
-        data["final_message"] = ""
-        tour_ids.append(create_tour(db, data.pop("guide_id"), data, schedules))
-    for participant_id, tour_id, days_ahead in [
-        (user_ids[4], tour_ids[0], 5), (user_ids[5], tour_ids[1], 6), (user_ids[6], tour_ids[3], 3)
-    ]:
-        weekday = schedules_for_tour(db, tour_id)[0]["weekday"]
-        tour_date = today + timedelta(days=days_ahead)
-        tour_date += timedelta(days=(weekday - tour_date.weekday()) % 7)
-        guests = ["Marco Rossi"] if participant_id == user_ids[4] else []
-        create_reservation(db, participant_id, tour_id, tour_date.isoformat(), guests, now.isoformat())
-    past_date = today - timedelta(days=1)
-    weekday = schedules_for_tour(db, tour_ids[0])[0]["weekday"]
-    past_date -= timedelta(days=(past_date.weekday() - weekday) % 7)
-    create_reservation(db, user_ids[5], tour_ids[0], past_date.isoformat(), [], now.isoformat())

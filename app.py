@@ -20,6 +20,7 @@ from user import User
 
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE = BASE_DIR / "turkish_delight.db"
+DEFAULT_GUIDE_IMAGE = userdb.DEFAULT_PROFILE_PHOTO
 LANGUAGES = ["English", "Italian", "Spanish", "Portuguese", "German"]
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -28,8 +29,10 @@ app.config.update(
     SECRET_KEY=os.environ.get("SECRET_KEY", "dev-change-this-secret"),
     MAX_CONTENT_LENGTH=25 * 1024 * 1024,
     UPLOAD_FOLDER=str(BASE_DIR / "static" / "reports"),
+    GUIDE_UPLOAD_FOLDER=str(BASE_DIR / "static" / "guides"),
 )
 Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
+Path(app.config["GUIDE_UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
@@ -88,14 +91,22 @@ def tour_images(tour_id):
     return [f.name for f in files if f.is_file()]
 
 
+def guide_image(filename):
+    """Return an existing guide image or the shared default."""
+    filename = filename or DEFAULT_GUIDE_IMAGE
+    relative = Path(filename)
+    if relative.is_absolute() or ".." in relative.parts:
+        return DEFAULT_GUIDE_IMAGE
+    return filename if (BASE_DIR / "static" / relative).is_file() else DEFAULT_GUIDE_IMAGE
+
+
 def tour_from_row(row):
     tour = dict(row)
     tour["foods"] = json.loads(tour["foods"])
     tour["stops"] = json.loads(tour["stops"])
     tour["story_points"] = json.loads(tour["story_points"])
     tour["images"] = tour_images(tour["id"])
-    preferred_guide = BASE_DIR / "static" / f"Guide{tour['id']}.jpg"
-    tour["guide_image"] = preferred_guide.name if preferred_guide.exists() else "Guide1.jpg"
+    tour["guide_image"] = guide_image(tour.get("guide_image"))
     return tour
 
 
@@ -149,13 +160,11 @@ def guides():
     for row in rows:
         guide = User(row)
         guide_tours = tourdb.tours_for_guide(get_db(), guide.id, summary=True)
-        image = "Logo.png"
-        for tour in guide_tours:
-            candidate = BASE_DIR / "static" / f"Guide{tour['id']}.jpg"
-            if candidate.exists():
-                image = candidate.name
-                break
-        guide_list.append({"user": guide, "tours": guide_tours, "image": image})
+        guide_list.append({
+            "user": guide,
+            "tours": guide_tours,
+            "image": guide_image(guide.profile_photo),
+        })
     return render_template("guides.html", guides=guide_list)
 
 
@@ -166,13 +175,10 @@ def guide_detail(guide_id):
         abort(404)
     tour_rows = tourdb.tours_for_guide(get_db(), guide_id)
     guide_tours = [tour_from_row(tour) for tour in tour_rows]
-    image = "Homepage.jpg"
-    for tour in guide_tours:
-        candidate = BASE_DIR / "static" / f"Guide{tour['id']}.jpg"
-        if candidate.exists():
-            image = candidate.name
-            break
-    return render_template("guide_detail.html", guide=guide, tours=guide_tours, image=image)
+    return render_template(
+        "guide_detail.html", guide=guide, tours=guide_tours,
+        image=guide_image(guide.profile_photo),
+    )
 
 
 @app.route("/tour/<int:tour_id>")
@@ -196,18 +202,30 @@ def register():
         password = request.form.get("password", "")
         role = request.form.get("role", "")
         languages = [x for x in request.form.getlist("languages") if x in LANGUAGES] if role == "guide" else []
+        photo = request.files.get("profile_photo")
+        profile_photo = DEFAULT_GUIDE_IMAGE
         errors = []
         if not first or not last: errors.append("First and last name are required.")
         if "@" not in email: errors.append("Enter a valid email address.")
         if len(password) < 8: errors.append("Password must be at least 8 characters.")
         if role not in {"guide", "participant"}: errors.append("Choose an account type.")
         if role == "guide" and not languages: errors.append("Guides must choose at least one language.")
+        if role == "guide" and photo and photo.filename:
+            extension = Path(secure_filename(photo.filename)).suffix.lower()
+            if extension not in {".jpg", ".jpeg", ".png", ".webp"}:
+                errors.append("Profile photos must be JPG, PNG, or WebP files.")
+            else:
+                profile_photo = f"guides/guide-{secrets.token_hex(12)}{extension}"
         if userdb.email_exists(get_db(), email):
             errors.append("An account with that email already exists.")
         if errors:
             for error in errors: flash(error, "error")
         else:
-            user_id = userdb.create_user(get_db(), first, last, email, password, role, languages)
+            if profile_photo != DEFAULT_GUIDE_IMAGE:
+                photo.save(Path(app.config["GUIDE_UPLOAD_FOLDER"]) / Path(profile_photo).name)
+            user_id = userdb.create_user(
+                get_db(), first, last, email, password, role, languages, profile_photo
+            )
             login_user(load_user(user_id))
             flash("Welcome to Turkish Delight!", "success")
             return redirect(url_for("profile"))
@@ -473,10 +491,9 @@ def forbidden(_error): return render_template("error.html", code=403, message="T
 def init_db():
     db = get_db()
     db.executescript((BASE_DIR / "schema.sql").read_text())
-    userdb.prepare_user_schema(db)
-    if not userdb.has_users(db):
-        user_ids = userdb.seed_sample_users(db)
-        tourdb.seed_sample_tours(db, user_ids, date.today(), datetime.now())
+    profile_photo_added = userdb.prepare_user_schema(db)
+    if profile_photo_added:
+        userdb.migrate_legacy_guide_photos(db, BASE_DIR / "static")
     userdb.ensure_admin_account(db)
     userdb.migrate_sample_password_hashes(db)
 

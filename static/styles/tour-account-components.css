@@ -361,13 +361,37 @@
     padding: 7rem 8vw;
     display: grid;
     grid-template-columns: .65fr 1.35fr;
-    gap: 8vw
+    gap: 8vw;
+    position: relative;
+    overflow: hidden
+}
+
+.tour-form-decoration {
+    position: absolute;
+    top: .5rem;
+    width: min(24vw, 310px);
+    height: auto;
+    pointer-events: none;
+    user-select: none
+}
+
+.tour-form-decoration-left {
+    left: 1.5vw
+}
+
+.tour-form-decoration-right {
+    right: 1.5vw;
+    transform: scaleX(-1)
+}
+
+.form-page>div,
+.form-page>form {
+    position: relative;
+    z-index: 1
 }
 
 .form-page h1 {
-    font-size: clamp(3rem, 5vw, 5rem);
-    position: sticky;
-    top: 2rem
+    font-size: clamp(3rem, 5vw, 5rem)
 }
 
 .editor-form {
@@ -479,9 +503,6 @@
         grid-column: 1/-1
     }
 
-    .form-page h1 {
-        position: static
-    }
 }
 
 @media(max-width:620px) {
@@ -610,5 +631,20 @@
 
     .error-page h1 {
         font-size: 2.8rem
+    }
+}
+
+@media(max-width:700px) {
+    .tour-form-decoration {
+        top: .25rem;
+        width: 120px
+    }
+
+    .tour-form-decoration-left {
+        left: -28px
+    }
+
+    .tour-form-decoration-right {
+        right: -28px
     }
 }

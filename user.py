@@ -13,6 +13,7 @@ class User(UserMixin):
         self.email = row["email"]
         self.role = row["role"]
         self.languages = json.loads(row["languages"] or "[]")
+        self.profile_photo = row["profile_photo"] or "GuideDefault.jpg"
 
     @property
     def full_name(self):
