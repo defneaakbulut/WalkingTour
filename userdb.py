@@ -1,3 +1,5 @@
+"""Database operations for accounts, roles, and guide profiles."""
+
 import json
 
 from werkzeug.security import generate_password_hash
@@ -8,6 +10,7 @@ PASSWORD_METHOD = "pbkdf2:sha256"
 DEFAULT_PROFILE_PHOTO = "GuideDefault.jpg"
 
 
+# Basic user lookup and creation operations.
 def hash_password(password):
     """Use a method supported by Python 3.9 and PythonAnywhere."""
     return generate_password_hash(password, method=PASSWORD_METHOD)
@@ -63,6 +66,7 @@ def count_role(db, role):
     return db.execute("SELECT COUNT(*) FROM users WHERE role=?", (role,)).fetchone()[0]
 
 
+# These migrations let older database files work with the current application.
 def prepare_user_schema(db):
     """Expand older databases to support administrators and guide photos."""
     original_columns = {
@@ -120,14 +124,6 @@ def migrate_legacy_guide_photos(db, static_folder):
                 )
                 break
     db.commit()
-
-
-def ensure_admin_account(db):
-    if not db.execute("SELECT 1 FROM users WHERE role='admin'").fetchone():
-        create_user(
-            db, "Platform", "Administrator", "admin@turkishdelight.test",
-            "Admin2026!", "admin", [],
-        )
 
 
 def migrate_sample_password_hashes(db):

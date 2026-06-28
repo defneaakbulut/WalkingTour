@@ -18,6 +18,7 @@ import userdb
 from user import User
 
 
+# Paths and choices shared by routes and templates.
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE = BASE_DIR / "turkish_delight.db"
 DEFAULT_GUIDE_IMAGE = userdb.DEFAULT_PROFILE_PHOTO
@@ -39,7 +40,9 @@ login_manager.login_view = "login"
 login_manager.login_message_category = "info"
 
 
+# One SQLite connection is opened per request and closed afterward.
 def get_db():
+    """Return the current request's database connection."""
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
         g.db.row_factory = sqlite3.Row
@@ -68,6 +71,7 @@ def csrf_token():
 app.jinja_env.globals.update(csrf_token=csrf_token, weekdays=WEEKDAYS)
 
 
+# All state-changing forms must include the token placed in the session.
 @app.before_request
 def verify_csrf():
     if request.method == "POST" and request.form.get("csrf_token") != session.get("csrf_token"):
@@ -86,6 +90,7 @@ def role_required(role):
     return decorator
 
 
+# Helpers that turn stored tour data and image filenames into template-ready values.
 def tour_images(tour_id):
     files = sorted((BASE_DIR / "static").glob(f"Tour{tour_id}_*"))
     return [f.name for f in files if f.is_file()]
@@ -101,6 +106,7 @@ def guide_image(filename):
 
 
 def tour_from_row(row):
+    """Decode JSON fields and attach images to a tour database row."""
     tour = dict(row)
     tour["foods"] = json.loads(tour["foods"])
     tour["stops"] = json.loads(tour["stops"])
@@ -111,6 +117,7 @@ def tour_from_row(row):
 
 
 def next_occurrences(tour_id, limit=10):
+    """Find upcoming scheduled dates and their current booked-place counts."""
     schedule_rows = tourdb.schedules_for_tour(get_db(), tour_id)
     schedule = {row["weekday"]: row["start_time"] for row in schedule_rows}
     results = []
@@ -129,6 +136,7 @@ def next_occurrences(tour_id, limit=10):
     return results
 
 
+# Public tour and guide catalogue pages.
 @app.route("/")
 def home():
     language = request.args.get("language", "")
@@ -191,6 +199,7 @@ def tour_detail(tour_id):
                            occurrences=next_occurrences(tour_id))
 
 
+# Registration, login, and account dashboards.
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
@@ -315,6 +324,7 @@ def admin_dashboard():
     )
 
 
+# Participant reservation creation and cancellation.
 @app.route("/tour/<int:tour_id>/book", methods=["POST"])
 @role_required("participant")
 def book_tour(tour_id):
@@ -379,7 +389,9 @@ def cancel_reservation(reservation_id):
     return redirect(url_for("profile"))
 
 
+# Shared validation for both creating and editing a guide's tour.
 def parse_tour_form(existing=None):
+    """Parse tour fields and return normalized data, schedules, and validation errors."""
     data = {
         "title": request.form.get("title", "").strip(), "subtitle": request.form.get("subtitle", "").strip(),
         "description": request.form.get("description", "").strip(), "story": "", "final_message": "",
@@ -449,6 +461,7 @@ def edit_tour(tour_id):
                            schedule=schedule, locked=has_reservations)
 
 
+# Post-tour reports are restricted to dates that actually received reservations.
 @app.route("/guide/report/<int:tour_id>", methods=["POST"])
 @role_required("guide")
 def submit_report(tour_id):
@@ -489,12 +502,12 @@ def forbidden(_error): return render_template("error.html", code=403, message="T
 
 
 def init_db():
+    """Create missing tables and apply lightweight compatibility migrations."""
     db = get_db()
     db.executescript((BASE_DIR / "schema.sql").read_text())
     profile_photo_added = userdb.prepare_user_schema(db)
     if profile_photo_added:
         userdb.migrate_legacy_guide_photos(db, BASE_DIR / "static")
-    userdb.ensure_admin_account(db)
     userdb.migrate_sample_password_hashes(db)
 
 

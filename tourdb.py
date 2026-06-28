@@ -1,6 +1,9 @@
+"""Database queries for tours, schedules, reservations, and reports."""
+
 import json
 
 
+# Tour catalogue and weekly schedule queries.
 def list_tours(db, language="", max_duration=None, weekday=None):
     query = """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
                FROM tours t JOIN users u ON u.id=t.guide_id WHERE 1=1"""
@@ -58,6 +61,7 @@ def schedule_for_day(db, tour_id, weekday):
     ).fetchone()
 
 
+# Reservation totals include the participant and any named guests.
 def booked_places(db, tour_id, tour_date):
     return db.execute(
         """SELECT COUNT(*) + COALESCE(SUM((SELECT COUNT(*) FROM reservation_guests rg
@@ -168,6 +172,7 @@ def has_tour_reservations(db, tour_id):
     return bool(db.execute("SELECT 1 FROM reservations WHERE tour_id=?", (tour_id,)).fetchone())
 
 
+# Tour changes keep their weekly schedules in the separate schedules table.
 def create_tour(db, guide_id, data, schedules):
     cursor = db.execute(
         """INSERT INTO tours(guide_id,title,subtitle,description,story,final_message,
@@ -220,6 +225,7 @@ def date_has_reservations(db, tour_id, tour_date):
 
 
 def save_report(db, tour_id, tour_date, attendees, evidence_photo):
+    """Insert a report, or replace its values for the same tour and date."""
     db.execute(
         """INSERT INTO reports(tour_id,tour_date,attendees,evidence_photo) VALUES(?,?,?,?)
            ON CONFLICT(tour_id,tour_date) DO UPDATE SET

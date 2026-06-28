@@ -17,4 +17,5 @@ class User(UserMixin):
 
     @property
     def full_name(self):
+        """Return the display name used throughout the templates."""
         return f"{self.first_name} {self.last_name}"
