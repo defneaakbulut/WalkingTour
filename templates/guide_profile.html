@@ -1,19 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}Guide dashboard — Turkish Delight{% endblock %}
+{% block title %}{{ current_user.first_name }}'s Tours — Turkish Delight{% endblock %}
 
 {% block content %}
-  <section class="dashboard">
-    <div class="dashboard-head">
-      <p class="eyebrow">Guide dashboard</p>
-      <h1>Merhaba, {{ current_user.first_name }}.</h1>
-      <p>Manage your walks and see who is joining you.</p>
-    </div>
-    <div class="dashboard-actions">
-      <a class="button button-dark" href="{{ url_for('new_tour') }}">Create a tour</a>
-    </div>
+  <section class="dashboard guide-account-dashboard">
+    <img
+      class="guide-account-decoration guide-account-decoration-left"
+      src="{{ url_for('static', filename='decoration2.png') }}"
+      alt=""
+      aria-hidden="true"
+    >
+    <img
+      class="guide-account-decoration guide-account-decoration-right"
+      src="{{ url_for('static', filename='decoration2.png') }}"
+      alt=""
+      aria-hidden="true"
+    >
     <section>
-      <h2>Your tours</h2>
+      <div class="guide-dashboard-heading">
+        <h2>{{ current_user.first_name }}'s Tours</h2>
+        <a class="button button-dark" href="{{ url_for('new_tour') }}">Create a tour</a>
+      </div>
       <div class="guide-tour-list">
         {% for tour in tours %}
           <article class="guide-tour">
