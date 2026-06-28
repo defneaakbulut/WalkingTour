@@ -394,7 +394,7 @@ def parse_tour_form(existing=None):
     """Parse tour fields and return normalized data, schedules, and validation errors."""
     data = {
         "title": request.form.get("title", "").strip(), "subtitle": request.form.get("subtitle", "").strip(),
-        "description": request.form.get("description", "").strip(), "story": "", "final_message": "",
+        "description": request.form.get("description", "").strip(),
         "meeting_point": request.form.get("meeting_point", "").strip(), "language": request.form.get("language", ""),
         "foods": [x.strip() for x in request.form.get("foods", "").split(",") if x.strip()],
         "stops": [x.strip() for x in request.form.get("stops", "").splitlines() if x.strip()],
@@ -505,6 +505,7 @@ def init_db():
     """Create missing tables and apply lightweight compatibility migrations."""
     db = get_db()
     db.executescript((BASE_DIR / "schema.sql").read_text())
+    tourdb.prepare_tour_schema(db)
     profile_photo_added = userdb.prepare_user_schema(db)
     if profile_photo_added:
         userdb.migrate_legacy_guide_photos(db, BASE_DIR / "static")

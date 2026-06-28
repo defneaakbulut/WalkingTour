@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX IF NOT EXISTS one_platform_admin ON users(role) WHERE role = 'admin';
 CREATE TABLE IF NOT EXISTS tours (
   id INTEGER PRIMARY KEY AUTOINCREMENT, guide_id INTEGER NOT NULL REFERENCES users(id),
-  title TEXT NOT NULL, subtitle TEXT NOT NULL, description TEXT NOT NULL, story TEXT NOT NULL,
-  final_message TEXT NOT NULL, foods TEXT NOT NULL, stops TEXT NOT NULL, story_points TEXT NOT NULL,
+  title TEXT NOT NULL, subtitle TEXT NOT NULL, description TEXT NOT NULL,
+  foods TEXT NOT NULL, stops TEXT NOT NULL, story_points TEXT NOT NULL,
   meeting_point TEXT NOT NULL, duration INTEGER NOT NULL CHECK(duration > 0),
   language TEXT NOT NULL, capacity INTEGER NOT NULL CHECK(capacity > 0)
 );

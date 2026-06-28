@@ -3,6 +3,15 @@
 import json
 
 
+# Remove obsolete columns when opening a database created by an older version.
+def prepare_tour_schema(db):
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(tours)").fetchall()}
+    for column in ("story", "final_message"):
+        if column in columns:
+            db.execute(f"ALTER TABLE tours DROP COLUMN {column}")
+    db.commit()
+
+
 # Tour catalogue and weekly schedule queries.
 def list_tours(db, language="", max_duration=None, weekday=None):
     query = """SELECT t.*, u.first_name || ' ' || u.last_name AS guide_name
@@ -175,11 +184,10 @@ def has_tour_reservations(db, tour_id):
 # Tour changes keep their weekly schedules in the separate schedules table.
 def create_tour(db, guide_id, data, schedules):
     cursor = db.execute(
-        """INSERT INTO tours(guide_id,title,subtitle,description,story,final_message,
-           foods,stops,story_points,meeting_point,duration,language,capacity)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (guide_id, data["title"], data["subtitle"], data["description"], data["story"],
-         data["final_message"], json.dumps(data["foods"]), json.dumps(data["stops"]),
+        """INSERT INTO tours(guide_id,title,subtitle,description,foods,stops,story_points,
+           meeting_point,duration,language,capacity) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+        (guide_id, data["title"], data["subtitle"], data["description"],
+         json.dumps(data["foods"]), json.dumps(data["stops"]),
          json.dumps(data["story_points"]), data["meeting_point"], data["duration"],
          data["language"], data["capacity"]),
     )
@@ -198,21 +206,21 @@ def replace_schedules(db, tour_id, schedules):
 
 
 def update_tour(db, tour_id, data, schedules=None, essential=True):
-    common = (data["title"], data["subtitle"], data["description"], data["story"],
-              data["final_message"], json.dumps(data["foods"]), json.dumps(data["stops"]),
+    common = (data["title"], data["subtitle"], data["description"],
+              json.dumps(data["foods"]), json.dumps(data["stops"]),
               json.dumps(data["story_points"]))
     if essential:
         db.execute(
-            """UPDATE tours SET title=?,subtitle=?,description=?,story=?,final_message=?,foods=?,
-               stops=?,story_points=?,meeting_point=?,duration=?,language=?,capacity=? WHERE id=?""",
+            """UPDATE tours SET title=?,subtitle=?,description=?,foods=?,stops=?,story_points=?,
+               meeting_point=?,duration=?,language=?,capacity=? WHERE id=?""",
             common + (data["meeting_point"], data["duration"], data["language"],
                       data["capacity"], tour_id),
         )
         replace_schedules(db, tour_id, schedules or [])
     else:
         db.execute(
-            """UPDATE tours SET title=?,subtitle=?,description=?,story=?,final_message=?,
-               foods=?,stops=?,story_points=? WHERE id=?""",
+            """UPDATE tours SET title=?,subtitle=?,description=?,foods=?,stops=?,
+               story_points=? WHERE id=?""",
             common + (tour_id,),
         )
     db.commit()
