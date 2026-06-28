@@ -1,6 +1,10 @@
 # Turkish Delight
 
-A responsive Flask + SQLite platform for food-led free walking tours in İzmir.
+A responsive Flask + SQLite platform for free walking tours that talks about history with foods in İzmir.
+
+## Live website
+
+The deployed application is available at [https://defneakbulut.pythonanywhere.com/](https://defneakbulut.pythonanywhere.com/).
 
 ## Code structure
 
@@ -39,7 +43,6 @@ Administrator account (Prova finale):
 - Password: `Admin2026!`
 - Dashboard: `/admin`
 
-Set a secure `SECRET_KEY` environment variable in production. For PythonAnywhere, point the WSGI file at `app` in `app.py` and set the working directory to this project.
 
 Some websites that I was inspired by while designing:
 https://www.izmir.bel.tr/tr/Anasayfa
